@@ -68,6 +68,17 @@ const products: Product[] = [
     category: "Tees",
     imageUrl: "/products/void-frame-hoodie-alt.png",
   },
+  {
+    id: 203,
+    slug: "void-frame-hoodie-alt",
+    name: "NØX: (TARSH) Classical Street Art Tee",
+    description: "Alternate treatment of the same silhouette with a colder, cleaner finish.",
+    priceValue: 700,
+    priceLabel: "EGP 700",
+    stockLeft: 3,
+    category: "Tees",
+    imageUrl: "/products/NØX TARSH Classical Street Art Tee.png",
+  },
 ];
 
 export async function getProducts(): Promise<Product[]> {
