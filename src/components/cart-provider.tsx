@@ -27,6 +27,38 @@ const STORAGE_KEY = "nox-cart-v1";
 
 const CartContext = createContext<CartContextValue | null>(null);
 
+function parsePriceFromLabel(priceLabel: string): number | null {
+  const digits = priceLabel.replace(/[^0-9]/g, "");
+  if (!digits) {
+    return null;
+  }
+
+  return Number.parseInt(digits, 10);
+}
+
+function normalizeProductPrice(product: Product): Product {
+  const parsed = parsePriceFromLabel(product.priceLabel);
+
+  if (!parsed || parsed === product.priceValue) {
+    return product;
+  }
+
+  return { ...product, priceValue: parsed };
+}
+
+function normalizeStoredItem(item: Partial<CartItem>): CartItem | null {
+  if (!item.product || !item.color || typeof item.quantity !== "number") {
+    return null;
+  }
+
+  return {
+    product: normalizeProductPrice(item.product),
+    color: item.color,
+    quantity: item.quantity,
+    size: item.size ?? "M",
+  };
+}
+
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>(() => {
     if (typeof window === "undefined") {
@@ -39,7 +71,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      return JSON.parse(raw) as CartItem[];
+      const parsed = JSON.parse(raw) as Partial<CartItem>[];
+      return parsed.map(normalizeStoredItem).filter((item): item is CartItem => item !== null);
     } catch {
       return [];
     }
@@ -69,7 +102,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           );
         }
 
-        return [...prev, { product, quantity, color, size }];
+        return [...prev, { product: normalizeProductPrice(product), quantity, color, size }];
       });
     };
 
