@@ -70,7 +70,7 @@ const products: Product[] = [
   },
   {
     id: 203,
-    slug: "void-frame-hoodie-alt",
+    slug: "tarsh-classical-street-art-tee",
     name: "NØX: (TARSH) Classical Street Art Tee",
     description: "Alternate treatment of the same silhouette with a colder, cleaner finish.",
     priceValue: 700,

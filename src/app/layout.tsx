@@ -25,8 +25,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="bg-black text-white">
-      <body className={`${bebas.variable} ${inter.variable} font-body antialiased`}>
+    <html suppressHydrationWarning lang="en" className="bg-black text-white">
+      <body
+        suppressHydrationWarning
+        className={`${bebas.variable} ${inter.variable} font-body antialiased`}
+      >
         <CartProvider>{children}</CartProvider>
       </body>
     </html>
