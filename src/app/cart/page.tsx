@@ -31,7 +31,7 @@ export default function CartPage() {
             <div className="space-y-4">
               {items.map((item) => (
                 <article
-                  key={`${item.product.slug}-${item.color}`}
+                  key={`${item.product.slug}-${item.color}-${item.size}`}
                   className="grid gap-4 border border-zinc-800 bg-night p-4 md:grid-cols-[120px_1fr_auto]"
                 >
                   <div className="relative h-44 overflow-hidden bg-zinc-950 md:h-28">
@@ -42,26 +42,27 @@ export default function CartPage() {
                     <p className="font-display text-2xl tracking-[0.05em]">{item.product.name}</p>
                     <p className="mt-2 text-xs uppercase tracking-[0.18em] text-zinc-400">{item.product.category}</p>
                     <p className="mt-2 text-xs uppercase tracking-[0.18em] text-zinc-400">Color: {item.color}</p>
+                    <p className="mt-2 text-xs uppercase tracking-[0.18em] text-zinc-400">Size: {item.size}</p>
                     <p className="mt-2 text-xs uppercase tracking-[0.18em] text-zinc-500">Code: {item.product.id}</p>
                     <p className="mt-3 font-body text-sm text-zinc-300">{item.product.priceLabel}</p>
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2 md:justify-end">
                     <button
-                      onClick={() => updateQuantity(item.product.slug, item.color, item.quantity - 1)}
+                      onClick={() => updateQuantity(item.product.slug, item.color, item.size, item.quantity - 1)}
                       className="h-8 w-8 border border-zinc-700 text-sm"
                     >
                       -
                     </button>
                     <span className="w-8 text-center text-sm">{item.quantity}</span>
                     <button
-                      onClick={() => updateQuantity(item.product.slug, item.color, item.quantity + 1)}
+                      onClick={() => updateQuantity(item.product.slug, item.color, item.size, item.quantity + 1)}
                       className="h-8 w-8 border border-zinc-700 text-sm"
                     >
                       +
                     </button>
                     <button
-                      onClick={() => removeItem(item.product.slug, item.color)}
+                      onClick={() => removeItem(item.product.slug, item.color, item.size)}
                       className="text-xs uppercase tracking-[0.16em] text-zinc-500 hover:text-white md:ml-4 md:tracking-[0.2em]"
                     >
                       Remove

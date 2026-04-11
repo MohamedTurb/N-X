@@ -3,20 +3,21 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { Product } from "../lib/products-api";
-import type { ProductColor } from "./cart-provider";
+import type { ProductColor, ProductSize } from "./cart-provider";
 import { useCart } from "./cart-provider";
 
 export function ProductActions({ product }: { product: Product }) {
   const router = useRouter();
   const { addItem } = useCart();
   const [color, setColor] = useState<ProductColor>("Black");
+  const [size, setSize] = useState<ProductSize>("M");
 
   const handleAdd = () => {
-    addItem(product, 1, color);
+    addItem(product, 1, color, size);
   };
 
   const handleBuyNow = () => {
-    addItem(product, 1, color);
+    addItem(product, 1, color, size);
     router.push("/checkout");
   };
 
@@ -38,6 +39,28 @@ export function ProductActions({ product }: { product: Product }) {
               {tone}
             </button>
           ))}
+        </div>
+      </div>
+
+      <div>
+        <p className="font-body text-[10px] uppercase tracking-[0.16em] text-zinc-400 sm:text-xs sm:tracking-[0.25em]">Size</p>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {(["XS", "S", "M", "L", "XL"] as ProductSize[]).map((item) => (
+            <button
+              key={item}
+              onClick={() => setSize(item)}
+              className={`border px-3 py-2 text-[10px] uppercase tracking-[0.14em] transition sm:text-xs sm:tracking-[0.2em] ${
+                size === item
+                  ? "border-white bg-white text-black"
+                  : "border-zinc-600 text-zinc-300 hover:border-white hover:text-white"
+              }`}
+            >
+              {item}
+            </button>
+          ))}
+          <a href="#size-chart" className="ml-2 text-[10px] uppercase tracking-[0.16em] text-accent hover:text-white sm:text-xs">
+            Size Chart
+          </a>
         </div>
       </div>
 

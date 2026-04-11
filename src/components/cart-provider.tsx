@@ -4,18 +4,20 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import type { Product } from "../lib/products-api";
 
 export type ProductColor = "Black" | "White";
+export type ProductSize = "XS" | "S" | "M" | "L" | "XL";
 
 export type CartItem = {
   product: Product;
   quantity: number;
   color: ProductColor;
+  size: ProductSize;
 };
 
 type CartContextValue = {
   items: CartItem[];
-  addItem: (product: Product, quantity?: number, color?: ProductColor) => void;
-  removeItem: (slug: string, color: ProductColor) => void;
-  updateQuantity: (slug: string, color: ProductColor, quantity: number) => void;
+  addItem: (product: Product, quantity?: number, color?: ProductColor, size?: ProductSize) => void;
+  removeItem: (slug: string, color: ProductColor, size: ProductSize) => void;
+  updateQuantity: (slug: string, color: ProductColor, size: ProductSize, quantity: number) => void;
   clearCart: () => void;
   totalCount: number;
   totalPrice: number;
@@ -48,37 +50,46 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [items]);
 
   const value = useMemo<CartContextValue>(() => {
-    const addItem = (product: Product, quantity = 1, color: ProductColor = "Black") => {
+    const addItem = (
+      product: Product,
+      quantity = 1,
+      color: ProductColor = "Black",
+      size: ProductSize = "M"
+    ) => {
       setItems((prev) => {
         const existing = prev.find(
-          (item) => item.product.slug === product.slug && item.color === color
+          (item) => item.product.slug === product.slug && item.color === color && item.size === size
         );
 
         if (existing) {
           return prev.map((item) =>
-            item.product.slug === product.slug && item.color === color
+            item.product.slug === product.slug && item.color === color && item.size === size
               ? { ...item, quantity: item.quantity + quantity }
               : item
           );
         }
 
-        return [...prev, { product, quantity, color }];
+        return [...prev, { product, quantity, color, size }];
       });
     };
 
-    const removeItem = (slug: string, color: ProductColor) => {
-      setItems((prev) => prev.filter((item) => !(item.product.slug === slug && item.color === color)));
+    const removeItem = (slug: string, color: ProductColor, size: ProductSize) => {
+      setItems((prev) =>
+        prev.filter((item) => !(item.product.slug === slug && item.color === color && item.size === size))
+      );
     };
 
-    const updateQuantity = (slug: string, color: ProductColor, quantity: number) => {
+    const updateQuantity = (slug: string, color: ProductColor, size: ProductSize, quantity: number) => {
       if (quantity <= 0) {
-        removeItem(slug, color);
+        removeItem(slug, color, size);
         return;
       }
 
       setItems((prev) =>
         prev.map((item) =>
-          item.product.slug === slug && item.color === color ? { ...item, quantity } : item
+          item.product.slug === slug && item.color === color && item.size === size
+            ? { ...item, quantity }
+            : item
         )
       );
     };

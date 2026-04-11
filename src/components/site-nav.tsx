@@ -8,7 +8,6 @@ const links = [
   { href: "/intro", label: "Intro" },
   { href: "/drop", label: "Drop" },
   { href: "/shop", label: "Shop" },
-  { href: "/size-chart", label: "Size Chart" },
   { href: "/lookbook", label: "Lookbook" },
   { href: "/cart", label: "Cart" },
 ];
@@ -28,10 +27,11 @@ export function SiteNav() {
         >
           NØX
         </Link>
-        <div className="w-full overflow-x-auto sm:w-auto sm:overflow-visible">
-          <div className="flex min-w-max items-center gap-1.5 pb-1 sm:gap-3 sm:pb-0">
+        <div className="w-full sm:w-auto">
+          <div className="flex flex-wrap items-center gap-1.5 sm:justify-end sm:gap-3">
           {links.map((link) => {
             const isActive = pathname === link.href;
+            const isCartLink = link.href === "/cart";
 
             return (
               <Link
@@ -42,10 +42,14 @@ export function SiteNav() {
                   isActive
                     ? "border-b border-accent text-white"
                     : "text-zinc-400 hover:text-white"
-                }`}
+                } ${isCartLink ? "inline-flex items-center gap-1.5" : ""}`}
               >
                 {link.label}
-                {link.href === "/cart" && totalCount > 0 ? ` (${totalCount})` : ""}
+                {isCartLink && totalCount > 0 ? (
+                  <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[9px] font-semibold leading-none text-white sm:h-5 sm:min-w-5 sm:text-[10px]">
+                    {totalCount}
+                  </span>
+                ) : null}
               </Link>
             );
           })}

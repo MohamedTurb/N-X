@@ -78,7 +78,7 @@ export function ShopGrid({ products }: ShopGridProps) {
                   View Details
                 </Link>
                 <button
-                  onClick={() => addItem(product, 1, "Black")}
+                  onClick={() => addItem(product, 1, "Black", "M")}
                   className="border border-zinc-600 px-3 py-2 text-[10px] uppercase tracking-[0.18em] text-zinc-300 transition hover:border-white hover:text-white"
                 >
                   Add

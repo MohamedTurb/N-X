@@ -15,6 +15,7 @@ type SavedOrder = {
     productName: string;
     productCode: number;
     color: string;
+    size: string;
     quantity: number;
   }>;
 };
@@ -94,7 +95,7 @@ export default function CheckoutPage() {
     setError("");
 
     const lines = items.map((item, index) => {
-      return `${index + 1}) Product: ${item.product.name}\nCode: ${item.product.id}\nColor: ${item.color}\nQty: ${item.quantity}`;
+      return `${index + 1}) Product: ${item.product.name}\nCode: ${item.product.id}\nColor: ${item.color}\nSize: ${item.size}\nQty: ${item.quantity}`;
     });
 
     const nextOrderCode = `NOX-${Date.now()}`;
@@ -123,6 +124,7 @@ export default function CheckoutPage() {
         productName: item.product.name,
         productCode: item.product.id,
         color: item.color,
+        size: item.size,
         quantity: item.quantity,
       })),
     });
@@ -199,9 +201,9 @@ export default function CheckoutPage() {
 
               <div className="mt-6 space-y-3 text-sm">
                 {items.map((item) => (
-                  <div key={`${item.product.slug}-${item.color}`} className="flex items-center justify-between">
+                  <div key={`${item.product.slug}-${item.color}-${item.size}`} className="flex items-center justify-between">
                     <span className="max-w-[70%] truncate text-zinc-300">
-                      {item.product.name} ({item.color}) x {item.quantity}
+                      {item.product.name} ({item.color}/{item.size}) x {item.quantity}
                     </span>
                     <span>{formatCurrency(item.product.priceValue * item.quantity)}</span>
                   </div>
