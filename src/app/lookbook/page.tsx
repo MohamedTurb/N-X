@@ -9,7 +9,7 @@ export default function LookbookPage() {
   return (
     <main className="min-h-screen bg-black text-white">
       <SiteNav />
-      <section className="px-0 py-10">
+      <section className="py-8 sm:py-10">
         {lookbookFrames.map((frame, index) => (
           <motion.div
             key={frame}
@@ -18,7 +18,7 @@ export default function LookbookPage() {
             whileInView="visible"
             viewport={{ once: true, amount: 0.32 }}
             transition={{ duration: 0.8, delay: 0.1 }}
-            className="relative mx-auto mb-10 flex h-[70vh] max-w-7xl items-end border-y border-zinc-800 px-8 py-10 md:h-[78vh]"
+            className="relative mx-auto mb-8 flex min-h-[420px] max-w-7xl items-end border-y border-zinc-800 px-4 py-8 sm:mb-10 sm:min-h-[520px] sm:px-8 sm:py-10 md:min-h-[78vh]"
           >
             <div
               className={`absolute inset-0 bg-gradient-to-br ${
@@ -28,7 +28,7 @@ export default function LookbookPage() {
               }`}
             />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(255,0,51,0.2),transparent_30%)]" />
-            <p className="relative z-10 max-w-3xl font-display text-4xl leading-[0.95] tracking-[0.08em] md:text-7xl">
+            <p className="relative z-10 max-w-3xl font-display text-3xl leading-[0.95] tracking-[0.06em] sm:text-4xl sm:tracking-[0.08em] md:text-7xl">
               {frame}
             </p>
           </motion.div>

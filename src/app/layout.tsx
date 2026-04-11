@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Bebas_Neue, Inter } from "next/font/google";
 import "./globals.css";
+import { CartProvider } from "../components/cart-provider";
 
 const bebas = Bebas_Neue({
   variable: "--font-bebas",
@@ -26,7 +27,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="bg-black text-white">
       <body className={`${bebas.variable} ${inter.variable} font-body antialiased`}>
-        {children}
+        <CartProvider>{children}</CartProvider>
       </body>
     </html>
   );
