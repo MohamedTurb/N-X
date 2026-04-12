@@ -19,6 +19,10 @@ const ensureSchemaCompatibility = async () => {
   await sequelize.query('ALTER TABLE orders ADD COLUMN IF NOT EXISTS "customerEmail" VARCHAR(255);');
   await sequelize.query('ALTER TABLE orders ADD COLUMN IF NOT EXISTS "customerPhone" VARCHAR(255);');
   await sequelize.query('ALTER TABLE orders ADD COLUMN IF NOT EXISTS "shippingAddress" TEXT;');
+  await sequelize.query('ALTER TABLE orders ADD COLUMN IF NOT EXISTS "governorate" VARCHAR(255);');
+  await sequelize.query('ALTER TABLE orders ADD COLUMN IF NOT EXISTS "buildingNumber" VARCHAR(255);');
+  await sequelize.query('ALTER TABLE orders ADD COLUMN IF NOT EXISTS "floorNumber" VARCHAR(255);');
+  await sequelize.query('ALTER TABLE orders ADD COLUMN IF NOT EXISTS "landmark" TEXT;');
   await sequelize.query("ALTER TABLE cart_items ADD COLUMN IF NOT EXISTS \"color\" VARCHAR(255) DEFAULT 'Black';");
   await sequelize.query("ALTER TABLE order_items ADD COLUMN IF NOT EXISTS \"color\" VARCHAR(255) DEFAULT 'Black';");
 };

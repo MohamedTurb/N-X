@@ -35,6 +35,22 @@ const Order = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: true,
     },
+    governorate: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    buildingNumber: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    floorNumber: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    landmark: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
     status: {
       type: DataTypes.ENUM("pending", "paid", "shipped", "delivered"),
       allowNull: false,

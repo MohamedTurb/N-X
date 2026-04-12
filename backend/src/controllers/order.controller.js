@@ -4,10 +4,31 @@ const ApiError = require("../utils/api-error");
 const asyncHandler = require("../utils/async-handler");
 
 const createOrder = asyncHandler(async (req, res) => {
-  const { customerName, customerEmail, customerPhone, shippingAddress } = req.body;
+  const {
+    customerName,
+    customerEmail,
+    customerPhone,
+    shippingAddress,
+    governorate,
+    buildingNumber,
+    floorNumber,
+    landmark,
+  } = req.body;
 
-  if (!customerName || !customerEmail || !customerPhone || !shippingAddress) {
-    throw new ApiError(400, "customerName, customerEmail, customerPhone, and shippingAddress are required");
+  if (
+    !customerName ||
+    !customerEmail ||
+    !customerPhone ||
+    !shippingAddress ||
+    !governorate ||
+    !buildingNumber ||
+    !floorNumber ||
+    !landmark
+  ) {
+    throw new ApiError(
+      400,
+      "customerName, customerEmail, customerPhone, shippingAddress, governorate, buildingNumber, floorNumber, and landmark are required"
+    );
   }
 
   if (!customerEmail.includes("@")) {

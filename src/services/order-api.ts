@@ -26,6 +26,10 @@ export type BackendOrder = {
   customerEmail?: string | null;
   customerPhone?: string | null;
   shippingAddress?: string | null;
+  governorate?: string | null;
+  buildingNumber?: string | null;
+  floorNumber?: string | null;
+  landmark?: string | null;
   status: "pending" | "paid" | "shipped" | "delivered";
   createdAt: string;
   updatedAt: string;
@@ -38,6 +42,10 @@ export type CreateOrderPayload = {
   customerEmail: string;
   customerPhone: string;
   shippingAddress: string;
+  governorate: string;
+  buildingNumber: string;
+  floorNumber: string;
+  landmark: string;
 };
 
 export type OrderItem = {
@@ -60,6 +68,10 @@ export type Order = {
   customerEmail: string;
   customerPhone: string;
   shippingAddress: string;
+  governorate: string;
+  buildingNumber: string;
+  floorNumber: string;
+  landmark: string;
   userName: string;
   userEmail: string;
   status: BackendOrder["status"];
@@ -86,6 +98,10 @@ function normalizeOrder(order: BackendOrder): Order {
     customerEmail: order.customerEmail ?? order.user?.email ?? "",
     customerPhone: order.customerPhone ?? "",
     shippingAddress: order.shippingAddress ?? "",
+    governorate: order.governorate ?? "",
+    buildingNumber: order.buildingNumber ?? "",
+    floorNumber: order.floorNumber ?? "",
+    landmark: order.landmark ?? "",
     userName: order.user?.username ?? "",
     userEmail: order.user?.email ?? "",
     status: order.status,

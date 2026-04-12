@@ -45,6 +45,10 @@ const createOrderFromCart = async (userId, orderMeta = {}) => {
         customerEmail: orderMeta.customerEmail?.trim() || null,
         customerPhone: orderMeta.customerPhone?.trim() || null,
         shippingAddress: orderMeta.shippingAddress?.trim() || null,
+        governorate: orderMeta.governorate?.trim() || null,
+        buildingNumber: orderMeta.buildingNumber?.trim() || null,
+        floorNumber: orderMeta.floorNumber?.trim() || null,
+        landmark: orderMeta.landmark?.trim() || null,
         status: "pending",
       },
       { transaction }

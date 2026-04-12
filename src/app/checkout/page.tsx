@@ -37,6 +37,10 @@ function CheckoutContent() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [governorate, setGovernorate] = useState("");
+  const [buildingNumber, setBuildingNumber] = useState("");
+  const [floorNumber, setFloorNumber] = useState("");
+  const [landmark, setLandmark] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -77,6 +81,30 @@ function CheckoutContent() {
       return;
     }
 
+    const cleanedGovernorate = governorate.trim();
+    if (!cleanedGovernorate) {
+      setError("Please enter a governorate.");
+      return;
+    }
+
+    const cleanedBuildingNumber = buildingNumber.trim();
+    if (!cleanedBuildingNumber) {
+      setError("Please enter a building number.");
+      return;
+    }
+
+    const cleanedFloorNumber = floorNumber.trim();
+    if (!cleanedFloorNumber) {
+      setError("Please enter a floor number.");
+      return;
+    }
+
+    const cleanedLandmark = landmark.trim();
+    if (!cleanedLandmark) {
+      setError("Please enter a landmark.");
+      return;
+    }
+
     try {
       setError("");
       setIsSubmitting(true);
@@ -85,6 +113,10 @@ function CheckoutContent() {
         customerEmail: cleanedEmail,
         customerPhone: phone.trim(),
         shippingAddress: cleanedAddress,
+        governorate: cleanedGovernorate,
+        buildingNumber: cleanedBuildingNumber,
+        floorNumber: cleanedFloorNumber,
+        landmark: cleanedLandmark,
       });
       setOrder(createdOrder);
       setIsPlaced(true);
@@ -156,7 +188,30 @@ function CheckoutContent() {
               className="w-full border border-zinc-700 bg-black px-4 py-3 text-sm"
               placeholder="Address"
             />
-            <input className="w-full border border-zinc-700 bg-black px-4 py-3 text-sm" placeholder="City" />
+            <input
+              value={governorate}
+              onChange={(event) => setGovernorate(event.target.value)}
+              className="w-full border border-zinc-700 bg-black px-4 py-3 text-sm"
+              placeholder="Governorate"
+            />
+            <input
+              value={buildingNumber}
+              onChange={(event) => setBuildingNumber(event.target.value)}
+              className="w-full border border-zinc-700 bg-black px-4 py-3 text-sm"
+              placeholder="Building Number"
+            />
+            <input
+              value={floorNumber}
+              onChange={(event) => setFloorNumber(event.target.value)}
+              className="w-full border border-zinc-700 bg-black px-4 py-3 text-sm"
+              placeholder="Floor"
+            />
+            <input
+              value={landmark}
+              onChange={(event) => setLandmark(event.target.value)}
+              className="w-full border border-zinc-700 bg-black px-4 py-3 text-sm"
+              placeholder="Landmark"
+            />
 
             {error ? <p className="text-xs uppercase tracking-[0.16em] text-accent">{error}</p> : null}
 
