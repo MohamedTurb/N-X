@@ -137,12 +137,12 @@ function CheckoutContent() {
   };
 
   return (
-    <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 md:py-20">
-      <h1 className="font-display text-4xl tracking-[0.08em] sm:text-6xl">CHECKOUT</h1>
+    <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14 md:py-20">
+      <h1 className="font-display text-3xl tracking-[0.08em] sm:text-6xl">CHECKOUT</h1>
 
       {isPlaced ? (
-        <div className="mt-12 border border-zinc-800 p-6 text-center sm:p-10">
-          <p className="font-display text-3xl tracking-[0.06em] sm:text-4xl sm:tracking-[0.08em]">ORDER CONFIRMED</p>
+        <div className="mt-10 border border-zinc-800 p-5 text-center sm:mt-12 sm:p-10">
+          <p className="font-display text-2xl tracking-[0.06em] sm:text-4xl sm:tracking-[0.08em]">ORDER CONFIRMED</p>
           <p className="mt-4 font-body text-[11px] uppercase tracking-[0.14em] text-zinc-400 sm:text-xs sm:tracking-[0.2em]">
             Your order has been created successfully.
           </p>
@@ -161,8 +161,8 @@ function CheckoutContent() {
           </Link>
         </div>
       ) : (
-        <div className="mt-10 grid gap-8 md:grid-cols-[1fr_300px] lg:grid-cols-[1fr_360px] md:gap-10">
-          <form className="space-y-5 border border-zinc-800 bg-night p-6">
+        <div className="mt-8 grid gap-6 md:grid-cols-[1fr_300px] lg:grid-cols-[1fr_360px] md:gap-10">
+          <form className="space-y-4 border border-zinc-800 bg-night p-4 sm:space-y-5 sm:p-6">
             <p className="font-body text-[10px] uppercase tracking-[0.2em] text-zinc-400 sm:text-xs sm:tracking-[0.3em]">Shipping Details</p>
             <input
               value={customerName}
@@ -188,34 +188,38 @@ function CheckoutContent() {
               className="w-full border border-zinc-700 bg-black px-4 py-3 text-sm"
               placeholder="Address"
             />
-            <input
-              value={governorate}
-              onChange={(event) => setGovernorate(event.target.value)}
-              className="w-full border border-zinc-700 bg-black px-4 py-3 text-sm"
-              placeholder="Governorate"
-            />
-            <input
-              value={buildingNumber}
-              onChange={(event) => setBuildingNumber(event.target.value)}
-              className="w-full border border-zinc-700 bg-black px-4 py-3 text-sm"
-              placeholder="Building Number"
-            />
-            <input
-              value={floorNumber}
-              onChange={(event) => setFloorNumber(event.target.value)}
-              className="w-full border border-zinc-700 bg-black px-4 py-3 text-sm"
-              placeholder="Floor"
-            />
-            <input
-              value={landmark}
-              onChange={(event) => setLandmark(event.target.value)}
-              className="w-full border border-zinc-700 bg-black px-4 py-3 text-sm"
-              placeholder="Landmark"
-            />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <input
+                value={governorate}
+                onChange={(event) => setGovernorate(event.target.value)}
+                className="w-full border border-zinc-700 bg-black px-4 py-3 text-sm"
+                placeholder="Governorate"
+              />
+              <input
+                value={buildingNumber}
+                onChange={(event) => setBuildingNumber(event.target.value)}
+                inputMode="numeric"
+                className="w-full border border-zinc-700 bg-black px-4 py-3 text-sm"
+                placeholder="Building Number"
+              />
+              <input
+                value={floorNumber}
+                onChange={(event) => setFloorNumber(event.target.value)}
+                inputMode="numeric"
+                className="w-full border border-zinc-700 bg-black px-4 py-3 text-sm"
+                placeholder="Floor"
+              />
+              <input
+                value={landmark}
+                onChange={(event) => setLandmark(event.target.value)}
+                className="w-full border border-zinc-700 bg-black px-4 py-3 text-sm sm:col-span-2"
+                placeholder="Landmark"
+              />
+            </div>
 
-            {error ? <p className="text-xs uppercase tracking-[0.16em] text-accent">{error}</p> : null}
+            {error ? <p className="break-words text-xs uppercase tracking-[0.16em] text-accent">{error}</p> : null}
 
-            <p className="pt-4 font-body text-[10px] uppercase tracking-[0.2em] text-zinc-400 sm:text-xs sm:tracking-[0.3em]">Payment</p>
+            <p className="pt-3 font-body text-[10px] uppercase tracking-[0.2em] text-zinc-400 sm:pt-4 sm:text-xs sm:tracking-[0.3em]">Payment</p>
             <div className="border border-zinc-700 p-4 text-xs uppercase tracking-[0.2em] text-zinc-300">
               Cash on Delivery
             </div>
@@ -230,13 +234,13 @@ function CheckoutContent() {
             </button>
           </form>
 
-          <aside className="h-fit border border-zinc-800 bg-night p-6">
+          <aside className="h-fit border border-zinc-800 bg-night p-4 sm:p-6">
             <p className="font-body text-xs uppercase tracking-[0.25em] text-zinc-400">Order Summary</p>
 
-            <div className="mt-6 space-y-3 text-sm">
+            <div className="mt-5 space-y-3 text-sm sm:mt-6">
               {items.map((item) => (
-                <div key={item.product.slug} className="flex items-center justify-between gap-3">
-                  <span className="max-w-[65%] truncate text-zinc-300 sm:max-w-[70%]">
+                <div key={item.product.slug} className="flex items-start justify-between gap-3">
+                  <span className="max-w-[68%] break-words text-zinc-300 sm:max-w-[70%]">
                     {item.product.name} ({item.color}/{item.size}) x {item.quantity}
                   </span>
                   <span>{formatCurrency(item.product.priceValue * item.quantity)}</span>
@@ -244,7 +248,7 @@ function CheckoutContent() {
               ))}
             </div>
 
-            <div className="mt-6 border-t border-zinc-800 pt-6">
+            <div className="mt-5 border-t border-zinc-800 pt-5 sm:mt-6 sm:pt-6">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-zinc-400">Subtotal</span>
                 <span>{formatCurrency(totalPrice)}</span>

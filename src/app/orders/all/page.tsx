@@ -406,24 +406,31 @@ function AdminDashboard() {
                 <span className="text-[10px] uppercase tracking-[0.22em] text-zinc-500 sm:text-xs">GET /orders/all</span>
               </div>
 
-              <div className="mt-5 flex flex-wrap items-center gap-3 border border-zinc-800 bg-night p-4">
-                <label htmlFor="order-filter" className="text-[10px] uppercase tracking-[0.2em] text-zinc-400">
-                  Filter Status
-                </label>
-                <select
-                  id="order-filter"
-                  value={orderFilter}
-                  onChange={(event) => setOrderFilter(event.target.value as OrderFilter)}
-                  className="border border-zinc-700 bg-black px-3 py-2 text-xs uppercase tracking-[0.14em] text-zinc-100"
-                >
-                  <option value="all">all</option>
-                  {ORDER_STATUSES.map((status) => (
-                    <option key={status} value={status}>
-                      {status}
-                    </option>
-                  ))}
-                </select>
-                <span className="text-[10px] uppercase tracking-[0.18em] text-zinc-500 sm:ml-auto">
+              <div className="mt-5 flex flex-col gap-4 border border-zinc-800 bg-night p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-3">
+                  <label className="text-[10px] uppercase tracking-[0.2em] text-zinc-400">Filter Status</label>
+                  <div className="flex flex-wrap gap-2">
+                    {(["all", ...ORDER_STATUSES] as OrderFilter[]).map((status) => {
+                      const isActive = orderFilter === status;
+
+                      return (
+                        <button
+                          key={status}
+                          type="button"
+                          onClick={() => setOrderFilter(status)}
+                          className={`rounded-full border px-4 py-2 text-[10px] uppercase tracking-[0.18em] transition sm:text-xs ${
+                            isActive
+                              ? "border-accent bg-accent text-white"
+                              : "border-zinc-700 bg-black text-zinc-300 hover:border-zinc-500 hover:text-white"
+                          }`}
+                        >
+                          {status === "all" ? "All" : status}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <span className="text-[10px] uppercase tracking-[0.18em] text-zinc-500 sm:ml-auto sm:text-right">
                   Showing {filteredOrders.length} / {orders.length}
                 </span>
               </div>
