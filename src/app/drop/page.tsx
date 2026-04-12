@@ -8,7 +8,7 @@ export default async function DropPage() {
   let products: Awaited<ReturnType<typeof getProducts>> = [];
 
   try {
-    products = await getProducts();
+    products = await getProducts(true);
   } catch (error) {
     console.error("Failed to fetch drop products:", error);
   }

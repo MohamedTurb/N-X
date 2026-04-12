@@ -92,8 +92,8 @@ export async function getProducts(forceRefresh = false) {
   });
 }
 
-export async function getProductById(id: number) {
-  const products = await getProducts();
+export async function getProductById(id: number, forceRefresh = false) {
+  const products = await getProducts(forceRefresh);
   const cached = products.find((product) => product.id === id);
 
   if (cached) {
@@ -104,15 +104,15 @@ export async function getProductById(id: number) {
   return mapProduct(product);
 }
 
-export async function getProductBySlug(slug: string) {
-  const products = await getProducts();
+export async function getProductBySlug(slug: string, forceRefresh = false) {
+  const products = await getProducts(forceRefresh);
   const match = products.find((product) => product.slug === slug);
 
   if (!match) {
     return null;
   }
 
-  return getProductById(match.id);
+  return getProductById(match.id, forceRefresh);
 }
 
 export async function createProduct(token: string, payload: Omit<BackendProduct, "id">) {

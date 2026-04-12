@@ -6,7 +6,7 @@ import { getProducts, type Product } from "../../lib/products-api";
 export default async function ShopPage() {
   let shopProducts: Product[] = [];
   try {
-    shopProducts = await getProducts();
+    shopProducts = await getProducts(true);
   } catch (error) {
     console.error('Failed to fetch products:', error);
   }
