@@ -48,13 +48,15 @@ export function ShopGrid({ products }: ShopGridProps) {
       <div className="mb-10 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="font-display text-4xl tracking-[0.08em] sm:text-6xl">SHOP</h1>
         <div className="overflow-x-auto">
-          <div className="flex min-w-max items-center gap-2 rounded-full border border-zinc-700 p-1">
+          <div className="flex min-w-max items-center gap-2 rounded-[1.25rem] border border-zinc-700/80 bg-zinc-950/70 p-1.5 shadow-[0_0_0_1px_rgba(255,255,255,0.03)] backdrop-blur-sm">
             {categories.map((item) => (
               <button
                 key={item}
                 onClick={() => setFilter(item)}
-                className={`whitespace-nowrap px-4 py-2 text-[10px] uppercase tracking-[0.16em] transition sm:text-xs sm:tracking-[0.2em] ${
-                  filter === item ? "bg-white text-black" : "text-zinc-300 hover:text-white"
+                className={`whitespace-nowrap rounded-[0.9rem] px-5 py-2.5 text-[10px] uppercase tracking-[0.2em] transition duration-200 sm:px-6 sm:text-xs sm:tracking-[0.24em] ${
+                  filter === item
+                    ? "bg-white text-black shadow-[0_8px_24px_rgba(255,255,255,0.12)]"
+                    : "text-zinc-300 hover:bg-white/5 hover:text-white"
                 }`}
               >
                 {item}
