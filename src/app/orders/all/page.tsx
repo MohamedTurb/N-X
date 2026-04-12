@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import Link from "next/link";
 import { SiteFooter } from "../../../components/site-footer";
 import { SiteNav } from "../../../components/site-nav";
@@ -33,6 +33,30 @@ type ProductFormState = {
 };
 
 const ORDER_STATUSES: OrderStatus[] = ["pending", "paid", "shipped", "delivered"];
+  const handleProductImageSelect = async (
+    event: ChangeEvent<HTMLInputElement>,
+    applyImageUrl: (imageUrl: string) => void
+  ) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      showToast("Please choose an image file", "error");
+      event.target.value = "";
+      return;
+    }
+
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      applyImageUrl(dataUrl);
+    } catch {
+      showToast("Failed to load image file", "error");
+      event.target.value = "";
+    }
+  };
 
 const EMPTY_PRODUCT_FORM: ProductFormState = {
   name: "",
@@ -45,6 +69,24 @@ const EMPTY_PRODUCT_FORM: ProductFormState = {
 
 type OrderFilter = "all" | OrderStatus;
 
+function fileToDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        resolve(reader.result);
+        return;
+      }
+
+      reject(new Error("Failed to read image file"));
+    };
+
+    reader.onerror = () => reject(new Error("Failed to read image file"));
+    reader.readAsDataURL(file);
+  });
+}
+
 function AdminDashboard() {
   const { token, logout, user } = useAuth();
   const { showToast } = useToast();
@@ -55,9 +97,11 @@ function AdminDashboard() {
   const [orderFilter, setOrderFilter] = useState<OrderFilter>("all");
   const [productQuery, setProductQuery] = useState("");
   const [newProduct, setNewProduct] = useState<ProductFormState>(EMPTY_PRODUCT_FORM);
+  const [newProductImageKey, setNewProductImageKey] = useState(0);
   const [isCreatingProduct, setIsCreatingProduct] = useState(false);
   const [editingProductId, setEditingProductId] = useState<number | null>(null);
   const [editingProduct, setEditingProduct] = useState<ProductFormState>(EMPTY_PRODUCT_FORM);
+  const [editingProductImageKey, setEditingProductImageKey] = useState(0);
   const [savingProductId, setSavingProductId] = useState<number | null>(null);
   const [deletingProductId, setDeletingProductId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -211,6 +255,7 @@ function AdminDashboard() {
       });
       setProducts((current) => [created, ...current]);
       setNewProduct(EMPTY_PRODUCT_FORM);
+      setNewProductImageKey((current) => current + 1);
       showToast(`Created ${created.name}`, "success");
     } catch (createError) {
       if (createError instanceof ApiError && createError.status === 401) {
@@ -234,6 +279,7 @@ function AdminDashboard() {
       category: product.categoryKey,
       imageUrl: product.imageUrl,
     });
+    setEditingProductImageKey((current) => current + 1);
   };
 
   const handleSaveProduct = async (productId: number) => {
@@ -266,6 +312,7 @@ function AdminDashboard() {
       });
       setProducts((current) => current.map((product) => (product.id === productId ? updated : product)));
       setEditingProductId(null);
+      setEditingProductImageKey((current) => current + 1);
       showToast(`Updated ${updated.name}`, "success");
     } catch (updateError) {
       if (updateError instanceof ApiError && updateError.status === 401) {
@@ -294,6 +341,7 @@ function AdminDashboard() {
       setProducts((current) => current.filter((item) => item.id !== product.id));
       if (editingProductId === product.id) {
         setEditingProductId(null);
+        setEditingProductImageKey((current) => current + 1);
       }
       showToast(`Deleted ${product.name}`, "info");
     } catch (deleteError) {
@@ -507,10 +555,27 @@ function AdminDashboard() {
                     placeholder="Category key (e.g. tops)"
                     className="border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500"
                   />
+                  <div className="grid gap-2 rounded border border-zinc-800 bg-black/30 p-3">
+                    <label className="text-[10px] uppercase tracking-[0.2em] text-zinc-400">Choose Image From Device</label>
+                    <input
+                      key={newProductImageKey}
+                      type="file"
+                      accept="image/*"
+                      onChange={(event) =>
+                        void handleProductImageSelect(event, (imageUrl) =>
+                          setNewProduct((current) => ({ ...current, imageUrl }))
+                        )
+                      }
+                      className="text-sm text-zinc-300 file:mr-4 file:border-0 file:bg-accent file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:opacity-90"
+                    />
+                    <p className="text-[10px] uppercase tracking-[0.16em] text-zinc-500">
+                      The selected image will be saved with the product.
+                    </p>
+                  </div>
                   <input
                     value={newProduct.imageUrl}
                     onChange={(event) => setNewProduct((current) => ({ ...current, imageUrl: event.target.value }))}
-                    placeholder="Image URL"
+                    placeholder="Or paste image URL"
                     className="border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500"
                   />
                   <button
@@ -600,10 +665,27 @@ function AdminDashboard() {
                           placeholder="Category key"
                           className="border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500"
                         />
+                        <div className="grid gap-2 rounded border border-zinc-800 bg-black/30 p-3">
+                          <label className="text-[10px] uppercase tracking-[0.2em] text-zinc-400">Choose Image From Device</label>
+                          <input
+                            key={editingProductImageKey}
+                            type="file"
+                            accept="image/*"
+                            onChange={(event) =>
+                              void handleProductImageSelect(event, (imageUrl) =>
+                                setEditingProduct((current) => ({ ...current, imageUrl }))
+                              )
+                            }
+                            className="text-sm text-zinc-300 file:mr-4 file:border-0 file:bg-accent file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:opacity-90"
+                          />
+                          <p className="text-[10px] uppercase tracking-[0.16em] text-zinc-500">
+                            The selected image will replace the current product image.
+                          </p>
+                        </div>
                         <input
                           value={editingProduct.imageUrl}
                           onChange={(event) => setEditingProduct((current) => ({ ...current, imageUrl: event.target.value }))}
-                          placeholder="Image URL"
+                          placeholder="Or paste image URL"
                           className="border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500"
                         />
 
@@ -618,7 +700,10 @@ function AdminDashboard() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => setEditingProductId(null)}
+                            onClick={() => {
+                              setEditingProductId(null);
+                              setEditingProductImageKey((current) => current + 1);
+                            }}
                             className="border border-zinc-700 px-4 py-2 text-[10px] uppercase tracking-[0.18em] text-zinc-300 transition hover:border-zinc-400 hover:text-white"
                           >
                             Cancel
