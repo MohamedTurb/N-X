@@ -13,9 +13,12 @@ const createOrderFromCart = async (userId) => {
 
     const cartItems = await CartItem.findAll({
       where: { cartId: cart.id },
-      include: [{ model: Product, as: "product" }],
+      include: [{ model: Product, as: "product", required: true }],
       transaction,
-      lock: transaction.LOCK.UPDATE,
+      lock: {
+        level: transaction.LOCK.UPDATE,
+        of: CartItem,
+      },
     });
 
     if (!cartItems.length) {
