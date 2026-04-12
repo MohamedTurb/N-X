@@ -409,7 +409,8 @@ function AdminDashboard() {
               <div className="mt-5 flex flex-col gap-4 border border-zinc-800 bg-night p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="space-y-3">
                   <label className="text-[10px] uppercase tracking-[0.2em] text-zinc-400">Filter Status</label>
-                  <div className="flex flex-wrap gap-2 rounded-full border border-zinc-700/90 bg-black/70 p-1.5">
+                  <div className="overflow-x-auto pb-1">
+                    <div className="flex w-max flex-nowrap gap-2 rounded-full border border-zinc-700/90 bg-black/70 p-1.5">
                     {(["all", ...ORDER_STATUSES] as OrderFilter[]).map((status) => {
                       const isActive = orderFilter === status;
 
@@ -428,6 +429,7 @@ function AdminDashboard() {
                         </button>
                       );
                     })}
+                    </div>
                   </div>
                 </div>
                 <span className="text-[10px] uppercase tracking-[0.18em] text-zinc-500 sm:ml-auto sm:text-right">
