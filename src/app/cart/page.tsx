@@ -11,6 +11,8 @@ function formatCurrency(value: number) {
   return `EGP ${value.toLocaleString("en-US")}`;
 }
 
+const SHIPPING_COST = 70;
+
 export default function CartPage() {
   return (
     <main className="min-h-screen bg-black text-white">
@@ -102,12 +104,12 @@ function CartContent() {
             </div>
             <div className="mt-3 flex items-center justify-between text-sm">
               <span className="text-zinc-400">Shipping</span>
-              <span>EGP 120</span>
+              <span>{formatCurrency(SHIPPING_COST)}</span>
             </div>
             <div className="mt-5 border-t border-zinc-800 pt-5">
               <div className="flex items-center justify-between">
                 <span className="font-body text-xs uppercase tracking-[0.2em] text-zinc-400">Total</span>
-                <span className="font-display text-2xl">{formatCurrency(totalPrice + 120)}</span>
+                <span className="font-display text-2xl">{formatCurrency(totalPrice + SHIPPING_COST)}</span>
               </div>
             </div>
             <Link

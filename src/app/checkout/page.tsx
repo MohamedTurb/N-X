@@ -15,6 +15,8 @@ function formatCurrency(value: number) {
   return `EGP ${value.toLocaleString("en-US")}`;
 }
 
+const SHIPPING_COST = 70;
+
 export default function CheckoutPage() {
   return (
     <main className="min-h-screen bg-black text-white">
@@ -44,7 +46,7 @@ function CheckoutContent() {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const finalTotal = useMemo(() => totalPrice + 120, [totalPrice]);
+  const finalTotal = useMemo(() => totalPrice + SHIPPING_COST, [totalPrice]);
 
   const handlePlaceOrder = async () => {
     const cleanedName = customerName.trim();
@@ -255,7 +257,7 @@ function CheckoutContent() {
               </div>
               <div className="mt-2 flex items-center justify-between text-sm">
                 <span className="text-zinc-400">Shipping</span>
-                <span>EGP 120</span>
+                <span>{formatCurrency(SHIPPING_COST)}</span>
               </div>
               <div className="mt-4 flex items-center justify-between">
                 <span className="font-body text-xs uppercase tracking-[0.2em] text-zinc-400">Total</span>
