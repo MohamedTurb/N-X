@@ -5,7 +5,14 @@ import { SiteNav } from "../../components/site-nav";
 import { getProducts } from "../../lib/products-api";
 
 export default async function DropPage() {
-  const products = await getProducts();
+  let products: Awaited<ReturnType<typeof getProducts>> = [];
+
+  try {
+    products = await getProducts();
+  } catch (error) {
+    console.error("Failed to fetch drop products:", error);
+  }
+
   const featuredProducts = products.slice(0, 6);
 
   return (
