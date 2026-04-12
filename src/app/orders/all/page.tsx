@@ -409,7 +409,7 @@ function AdminDashboard() {
               <div className="mt-5 flex flex-col gap-4 border border-zinc-800 bg-night p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="space-y-3">
                   <label className="text-[10px] uppercase tracking-[0.2em] text-zinc-400">Filter Status</label>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2 rounded-full border border-zinc-700/90 bg-black/70 p-1.5">
                     {(["all", ...ORDER_STATUSES] as OrderFilter[]).map((status) => {
                       const isActive = orderFilter === status;
 
@@ -418,9 +418,9 @@ function AdminDashboard() {
                           key={status}
                           type="button"
                           onClick={() => setOrderFilter(status)}
-                          className={`rounded-full border px-4 py-2 text-[10px] uppercase tracking-[0.18em] transition sm:text-xs ${
+                          className={`rounded-full border px-5 py-2.5 text-[10px] uppercase tracking-[0.22em] transition duration-200 sm:px-6 sm:text-xs sm:tracking-[0.28em] ${
                             isActive
-                              ? "border-accent bg-accent text-white"
+                              ? "border-accent bg-accent text-white shadow-[0_8px_24px_rgba(255,0,51,0.28)]"
                               : "border-zinc-700 bg-black text-zinc-300 hover:border-zinc-500 hover:text-white"
                           }`}
                         >
