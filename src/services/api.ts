@@ -18,6 +18,7 @@ type RequestJsonOptions = {
   token?: string | null;
   headers?: HeadersInit;
   signal?: AbortSignal;
+  cache?: RequestCache;
 };
 
 function joinPath(path: string) {
@@ -47,8 +48,11 @@ function toMessage(payload: unknown, status: number) {
 }
 
 export async function requestJson<T>(path: string, options: RequestJsonOptions = {}): Promise<T> {
+  const method = options.method ?? "GET";
+  const cache = options.cache ?? "no-store";
+
   const response = await fetch(joinPath(path), {
-    method: options.method ?? "GET",
+    method,
     headers: {
       ...(options.body !== undefined ? { "Content-Type": "application/json" } : {}),
       ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}),
@@ -56,6 +60,7 @@ export async function requestJson<T>(path: string, options: RequestJsonOptions =
     },
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
     signal: options.signal,
+    cache,
   });
 
   const text = await response.text();
