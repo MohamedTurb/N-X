@@ -33,30 +33,6 @@ type ProductFormState = {
 };
 
 const ORDER_STATUSES: OrderStatus[] = ["pending", "paid", "shipped", "delivered"];
-  const handleProductImageSelect = async (
-    event: ChangeEvent<HTMLInputElement>,
-    applyImageUrl: (imageUrl: string) => void
-  ) => {
-    const file = event.target.files?.[0];
-
-    if (!file) {
-      return;
-    }
-
-    if (!file.type.startsWith("image/")) {
-      showToast("Please choose an image file", "error");
-      event.target.value = "";
-      return;
-    }
-
-    try {
-      const dataUrl = await fileToDataUrl(file);
-      applyImageUrl(dataUrl);
-    } catch {
-      showToast("Failed to load image file", "error");
-      event.target.value = "";
-    }
-  };
 
 const EMPTY_PRODUCT_FORM: ProductFormState = {
   name: "",
@@ -188,6 +164,31 @@ function AdminDashboard() {
       );
     });
   }, [productQuery, products]);
+
+  const handleProductImageSelect = async (
+    event: ChangeEvent<HTMLInputElement>,
+    applyImageUrl: (imageUrl: string) => void
+  ) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      showToast("Please choose an image file", "error");
+      event.target.value = "";
+      return;
+    }
+
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      applyImageUrl(dataUrl);
+    } catch {
+      showToast("Failed to load image file", "error");
+      event.target.value = "";
+    }
+  };
 
   const handleOrderStatusDraft = (orderId: number, status: OrderStatus) => {
     setOrderStatusDrafts((current) => ({ ...current, [orderId]: status }));
