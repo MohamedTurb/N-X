@@ -23,6 +23,11 @@ const CartItem = sequelize.define(
       defaultValue: 1,
       validate: { min: 1 },
     },
+    color: {
+      type: DataTypes.ENUM("Black", "White"),
+      allowNull: false,
+      defaultValue: "Black",
+    },
   },
   {
     tableName: "cart_items",

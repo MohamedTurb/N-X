@@ -49,14 +49,14 @@ function CartContent() {
           </Link>
         </div>
       ) : (
-        <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_340px]">
+        <div className="mt-10 grid gap-8 md:grid-cols-[1fr_320px] lg:grid-cols-[1fr_340px] md:gap-10">
           <div className="space-y-4">
             {items.map((item) => (
               <article
-                key={item.product.slug}
-                className="grid gap-4 border border-zinc-800 bg-night p-4 md:grid-cols-[120px_1fr_auto]"
+                key={`${item.product.slug}-${item.color}-${item.size}`}
+                className="grid gap-4 border border-zinc-800 bg-night p-4 sm:grid-cols-[100px_1fr_auto] md:grid-cols-[120px_1fr_auto]"
               >
-                <div className="relative h-44 overflow-hidden bg-zinc-950 md:h-28">
+                <div className="relative h-36 overflow-hidden bg-zinc-950 sm:h-32 md:h-28">
                   <Image src={item.product.imageUrl} alt={item.product.name} fill className="object-cover" />
                 </div>
 
@@ -69,7 +69,7 @@ function CartContent() {
                   <p className="mt-3 font-body text-sm text-zinc-300">{item.product.priceLabel}</p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2 md:justify-end">
+                <div className="flex flex-wrap items-center gap-2 sm:justify-end">
                   <button
                     onClick={() => void updateQuantity(item.product.slug, item.color, item.size, item.quantity - 1)}
                     className="h-8 w-8 border border-zinc-700 text-sm"
@@ -85,7 +85,7 @@ function CartContent() {
                   </button>
                   <button
                     onClick={() => void removeItem(item.product.slug, item.color, item.size)}
-                    className="text-xs uppercase tracking-[0.16em] text-zinc-500 hover:text-white md:ml-4 md:tracking-[0.2em]"
+                    className="text-xs uppercase tracking-[0.16em] text-zinc-500 hover:text-white sm:ml-2 md:ml-4 md:tracking-[0.2em]"
                   >
                     Remove
                   </button>

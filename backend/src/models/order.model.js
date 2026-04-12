@@ -18,6 +18,23 @@ const Order = sequelize.define(
       allowNull: false,
       validate: { min: 0 },
     },
+    customerName: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    customerEmail: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      validate: { isEmail: true },
+    },
+    customerPhone: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    shippingAddress: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
     status: {
       type: DataTypes.ENUM("pending", "paid", "shipped", "delivered"),
       allowNull: false,

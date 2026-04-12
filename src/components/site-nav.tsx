@@ -25,7 +25,7 @@ export function SiteNav() {
       <nav className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <Link
           href="/"
-          className={`font-display text-3xl leading-none tracking-[0.08em] transition sm:text-4xl ${
+          className={`font-display text-2xl leading-none tracking-[0.08em] transition sm:text-3xl md:text-4xl ${
             pathname === "/" ? "text-white" : "text-zinc-200 hover:text-white"
           }`}
         >

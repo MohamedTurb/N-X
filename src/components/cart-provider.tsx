@@ -63,7 +63,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const addItem = async (
       product: Product,
       quantity = 1,
-      _color: ProductColor = "Black",
+      color: ProductColor = "Black",
       _size: ProductSize = "M"
     ) => {
       if (!token) {
@@ -71,7 +71,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       }
 
       try {
-        const snapshot = await cartApi.addItem(token, product.id, quantity);
+        const snapshot = await cartApi.addItem(token, product.id, quantity, color);
         setItems(snapshot.items);
         showToast("Added to cart", "success");
       } catch (error) {
@@ -88,13 +88,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         throw new ApiError("Please sign in to use the cart", 401);
       }
 
-      const item = items.find((entry) => entry.product.slug === slug);
+      const item = items.find((entry) => entry.product.slug === slug && entry.color === _color);
       if (!item) {
         return;
       }
 
       try {
-        const snapshot = await cartApi.removeItem(token, item.product.id);
+        const snapshot = await cartApi.removeItem(token, item.product.id, item.color);
         setItems(snapshot.items);
         showToast("Removed from cart", "info");
       } catch (error) {
@@ -111,7 +111,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         throw new ApiError("Please sign in to use the cart", 401);
       }
 
-      const item = items.find((entry) => entry.product.slug === slug);
+      const item = items.find((entry) => entry.product.slug === slug && entry.color === _color);
       if (!item) {
         return;
       }
@@ -122,7 +122,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       }
 
       try {
-        const snapshot = await cartApi.updateItem(token, item.product.id, quantity);
+        const snapshot = await cartApi.updateItem(token, item.product.id, quantity, item.color);
         setItems(snapshot.items);
       } catch (error) {
         if (error instanceof ApiError && error.status === 401) {

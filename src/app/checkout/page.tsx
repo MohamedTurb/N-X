@@ -34,7 +34,9 @@ function CheckoutContent() {
   const [isPlaced, setIsPlaced] = useState(false);
   const [order, setOrder] = useState<Order | null>(null);
   const [customerName, setCustomerName] = useState("");
+  const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -53,6 +55,12 @@ function CheckoutContent() {
       return;
     }
 
+    const cleanedEmail = email.trim();
+    if (!cleanedEmail || !cleanedEmail.includes("@")) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+
     if (!token) {
       setError("Session expired. Please sign in again.");
       return;
@@ -63,10 +71,21 @@ function CheckoutContent() {
       return;
     }
 
+    const cleanedAddress = address.trim();
+    if (cleanedAddress.length < 5) {
+      setError("Please enter a valid shipping address.");
+      return;
+    }
+
     try {
       setError("");
       setIsSubmitting(true);
-      const createdOrder = await orderApi.createOrder(token);
+      const createdOrder = await orderApi.createOrder(token, {
+        customerName: cleanedName,
+        customerEmail: cleanedEmail,
+        customerPhone: phone.trim(),
+        shippingAddress: cleanedAddress,
+      });
       setOrder(createdOrder);
       setIsPlaced(true);
       await clearCart();
@@ -110,7 +129,7 @@ function CheckoutContent() {
           </Link>
         </div>
       ) : (
-        <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_360px]">
+        <div className="mt-10 grid gap-8 md:grid-cols-[1fr_300px] lg:grid-cols-[1fr_360px] md:gap-10">
           <form className="space-y-5 border border-zinc-800 bg-night p-6">
             <p className="font-body text-[10px] uppercase tracking-[0.2em] text-zinc-400 sm:text-xs sm:tracking-[0.3em]">Shipping Details</p>
             <input
@@ -119,14 +138,24 @@ function CheckoutContent() {
               className="w-full border border-zinc-700 bg-black px-4 py-3 text-sm"
               placeholder="Full Name"
             />
-            <input className="w-full border border-zinc-700 bg-black px-4 py-3 text-sm" placeholder="Email" />
+            <input
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              className="w-full border border-zinc-700 bg-black px-4 py-3 text-sm"
+              placeholder="Email"
+            />
             <input
               value={phone}
               onChange={(event) => setPhone(event.target.value)}
               className="w-full border border-zinc-700 bg-black px-4 py-3 text-sm"
               placeholder="Phone"
             />
-            <input className="w-full border border-zinc-700 bg-black px-4 py-3 text-sm" placeholder="Address" />
+            <input
+              value={address}
+              onChange={(event) => setAddress(event.target.value)}
+              className="w-full border border-zinc-700 bg-black px-4 py-3 text-sm"
+              placeholder="Address"
+            />
             <input className="w-full border border-zinc-700 bg-black px-4 py-3 text-sm" placeholder="City" />
 
             {error ? <p className="text-xs uppercase tracking-[0.16em] text-accent">{error}</p> : null}
@@ -151,8 +180,8 @@ function CheckoutContent() {
 
             <div className="mt-6 space-y-3 text-sm">
               {items.map((item) => (
-                <div key={item.product.slug} className="flex items-center justify-between">
-                  <span className="max-w-[70%] truncate text-zinc-300">
+                <div key={item.product.slug} className="flex items-center justify-between gap-3">
+                  <span className="max-w-[65%] truncate text-zinc-300 sm:max-w-[70%]">
                     {item.product.name} ({item.color}/{item.size}) x {item.quantity}
                   </span>
                   <span>{formatCurrency(item.product.priceValue * item.quantity)}</span>

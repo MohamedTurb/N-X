@@ -18,7 +18,7 @@ export default function IntroPage() {
       >
         <div>
           <p className="font-display text-[10px] tracking-[0.35em] text-zinc-400 sm:text-xs sm:tracking-[0.5em]">MANIFESTO</p>
-          <h1 className="mt-6 max-w-4xl font-display text-4xl uppercase leading-[0.95] sm:mt-8 sm:text-6xl md:text-7xl">
+          <h1 className="mt-6 max-w-4xl font-display text-3xl uppercase leading-[0.95] sm:mt-8 sm:text-5xl md:text-6xl lg:text-7xl">
             NØX is not fashion. It is controlled identity collapse.
           </h1>
           <p className="mt-8 max-w-2xl font-body text-sm leading-relaxed tracking-[0.08em] text-zinc-300 sm:mt-10 sm:tracking-[0.12em]">

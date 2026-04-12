@@ -71,7 +71,7 @@ export function ShopGrid({ products }: ShopGridProps) {
             className="group relative overflow-hidden border border-zinc-800 bg-night"
           >
             <Link href={`/shop/${product.slug}`} className="block">
-              <div className="relative h-64 overflow-hidden bg-zinc-950 sm:h-72">
+              <div className="relative h-56 overflow-hidden bg-zinc-950 sm:h-64 md:h-72">
                 <Image
                   src={product.imageUrl}
                   alt={product.name}
@@ -83,7 +83,7 @@ export function ShopGrid({ products }: ShopGridProps) {
             </Link>
 
             <div className="space-y-3 p-5">
-              <h2 className="font-display text-2xl leading-none tracking-[0.06em]">{product.name}</h2>
+              <h2 className="font-display text-xl leading-none tracking-[0.06em] sm:text-2xl">{product.name}</h2>
               <p className="font-body text-xs uppercase tracking-[0.16em] text-zinc-400">
                 {product.description}
               </p>

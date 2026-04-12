@@ -29,7 +29,7 @@ export default function Home() {
         >
           <motion.h1
             data-text="NØX"
-            className="glitch-logo font-display text-[4rem] leading-none sm:text-[8rem] md:text-[11rem] lg:text-[13rem]"
+            className="glitch-logo font-display text-[3rem] leading-none sm:text-[6rem] md:text-[9rem] lg:text-[11rem] xl:text-[13rem]"
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.9, delay: 0.2 }}

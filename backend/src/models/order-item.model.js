@@ -22,6 +22,11 @@ const OrderItem = sequelize.define(
       allowNull: false,
       validate: { min: 1 },
     },
+    color: {
+      type: DataTypes.ENUM("Black", "White"),
+      allowNull: false,
+      defaultValue: "Black",
+    },
     price: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,

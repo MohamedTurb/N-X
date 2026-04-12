@@ -18,7 +18,7 @@ export default function LookbookPage() {
             whileInView="visible"
             viewport={{ once: true, amount: 0.32 }}
             transition={{ duration: 0.8, delay: 0.1 }}
-            className="relative mx-auto mb-8 flex min-h-[420px] max-w-7xl items-end border-y border-zinc-800 px-4 py-8 sm:mb-10 sm:min-h-[520px] sm:px-8 sm:py-10 md:min-h-[78vh]"
+            className="relative mx-auto mb-8 flex min-h-[360px] max-w-7xl items-end border-y border-zinc-800 px-4 py-8 sm:mb-10 sm:min-h-[440px] sm:px-8 sm:py-10 md:min-h-[62vh] lg:min-h-[78vh]"
           >
             <div
               className={`absolute inset-0 bg-gradient-to-br ${

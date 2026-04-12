@@ -1,7 +1,7 @@
 const { sequelize, CartItem, Product, Order, OrderItem, Cart } = require("../models");
 const ApiError = require("../utils/api-error");
 
-const createOrderFromCart = async (userId) => {
+const createOrderFromCart = async (userId, orderMeta = {}) => {
   const transaction = await sequelize.transaction();
 
   try {
@@ -41,6 +41,10 @@ const createOrderFromCart = async (userId) => {
       {
         userId,
         totalPrice: total.toFixed(2),
+        customerName: orderMeta.customerName?.trim() || null,
+        customerEmail: orderMeta.customerEmail?.trim() || null,
+        customerPhone: orderMeta.customerPhone?.trim() || null,
+        shippingAddress: orderMeta.shippingAddress?.trim() || null,
         status: "pending",
       },
       { transaction }
@@ -52,6 +56,7 @@ const createOrderFromCart = async (userId) => {
           orderId: order.id,
           productId: item.productId,
           quantity: item.quantity,
+          color: item.color,
           price: item.product.price,
         },
         { transaction }

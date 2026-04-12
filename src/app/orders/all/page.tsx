@@ -384,7 +384,7 @@ function AdminDashboard() {
         </div>
       ) : (
         <>
-          <div className="mt-10 grid gap-4 sm:grid-cols-3">
+          <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 sm:gap-4">
             <div className="border border-zinc-800 bg-night p-5">
               <p className="text-[10px] uppercase tracking-[0.22em] text-zinc-500">Revenue</p>
               <p className="mt-3 font-display text-3xl tracking-[0.06em]">{formatCurrency(stats.revenue)}</p>
@@ -399,7 +399,7 @@ function AdminDashboard() {
             </div>
           </div>
 
-          <div className="mt-12 grid gap-10 xl:grid-cols-[1.35fr_0.9fr]">
+          <div className="mt-12 grid gap-8 md:grid-cols-[1fr_350px] xl:grid-cols-[1.35fr_0.9fr] md:gap-10">
             <section>
               <div className="flex items-end justify-between gap-4">
                 <h2 className="font-display text-3xl tracking-[0.06em] sm:text-4xl">All Orders</h2>
@@ -442,6 +442,18 @@ function AdminDashboard() {
                         <div>
                           <p className="font-display text-2xl tracking-[0.05em]">Order #{order.id}</p>
                           <p className="mt-1 text-xs uppercase tracking-[0.18em] text-zinc-400">User #{order.userId}</p>
+                          <p className="mt-1 max-w-full break-words text-xs uppercase tracking-[0.18em] text-zinc-500">
+                            Name: {order.customerName || order.userName || "N/A"}
+                          </p>
+                          <p className="mt-1 max-w-full break-all text-xs uppercase tracking-[0.18em] text-zinc-500">
+                            Email: {order.customerEmail || order.userEmail || "N/A"}
+                          </p>
+                          <p className="mt-1 max-w-full break-words text-xs uppercase tracking-[0.18em] text-zinc-500">
+                            Phone: {order.customerPhone || "N/A"}
+                          </p>
+                          <p className="mt-1 max-w-full break-words text-xs tracking-[0.08em] text-zinc-500">
+                            Address: {order.shippingAddress || "N/A"}
+                          </p>
                         </div>
                         <div className="text-right">
                           <p className="text-sm text-zinc-300">{order.totalPriceLabel}</p>
@@ -486,7 +498,7 @@ function AdminDashboard() {
                         {order.items.map((item) => (
                           <div key={item.id} className="flex items-center justify-between gap-4 border-t border-zinc-900 pt-3">
                             <span className="max-w-[70%] truncate text-zinc-300">
-                              {item.productName} x {item.quantity}
+                              {item.productName} ({item.color}) x {item.quantity}
                             </span>
                             <span>{item.priceLabel}</span>
                           </div>

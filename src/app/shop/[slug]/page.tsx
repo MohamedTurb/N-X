@@ -30,7 +30,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
     <main className="min-h-screen bg-black text-white">
       <SiteNav />
       <section className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:gap-10 sm:px-6 md:grid-cols-2 md:py-20">
-        <div className="relative h-[45vh] overflow-hidden border border-zinc-800 bg-zinc-950 sm:h-[60vh] md:h-[75vh]">
+        <div className="relative h-[40vh] overflow-hidden border border-zinc-800 bg-zinc-950 sm:h-[50vh] md:h-[60vh] lg:h-[75vh]">
           <Image
             src={product.imageUrl}
             alt={product.name}
@@ -61,9 +61,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
               Size Chart
             </p>
             <div className="mt-4 overflow-x-auto">
-              <table className="w-full min-w-[360px] border-collapse text-left">
+              <table className="w-full min-w-full border-collapse text-left">
                 <thead>
-                  <tr className="border-b border-zinc-800 text-[10px] uppercase tracking-[0.2em] text-zinc-400 sm:text-xs">
+                  <tr className="border-b border-zinc-800 text-[10px] uppercase tracking-[0.16em] text-zinc-400 sm:text-xs sm:tracking-[0.2em]">
                     <th className="py-3 pr-4">Size</th>
                     <th className="py-3 pr-4">Width (cm)</th>
                     <th className="py-3 pr-4">Length (cm)</th>
@@ -71,7 +71,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 </thead>
                 <tbody>
                   {tshirtSizes.map((item) => (
-                    <tr key={item.size} className="border-b border-zinc-900 text-sm text-zinc-200">
+                    <tr key={item.size} className="border-b border-zinc-900 text-xs text-zinc-200 sm:text-sm">
                       <td className="py-3 pr-4 font-display text-lg tracking-[0.06em] text-white">{item.size}</td>
                       <td className="py-3 pr-4">{item.width}</td>
                       <td className="py-3 pr-4">{item.length}</td>
