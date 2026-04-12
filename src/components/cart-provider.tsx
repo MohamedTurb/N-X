@@ -1,133 +1,145 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import type { Product } from "../lib/products-api";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import type { Product } from "../services/product-api";
+import { ApiError, getErrorMessage } from "../services/api";
+import { cartApi, type CartItem } from "../services/cart-api";
+import { useAuth } from "./auth-provider";
+import { useToast } from "./toast-provider";
 
 export type ProductColor = "Black" | "White";
 export type ProductSize = "XS" | "S" | "M" | "L" | "XL";
 
-export type CartItem = {
-  product: Product;
-  quantity: number;
-  color: ProductColor;
-  size: ProductSize;
-};
-
 type CartContextValue = {
   items: CartItem[];
-  addItem: (product: Product, quantity?: number, color?: ProductColor, size?: ProductSize) => void;
-  removeItem: (slug: string, color: ProductColor, size: ProductSize) => void;
-  updateQuantity: (slug: string, color: ProductColor, size: ProductSize, quantity: number) => void;
-  clearCart: () => void;
+  addItem: (product: Product, quantity?: number, color?: ProductColor, size?: ProductSize) => Promise<void>;
+  removeItem: (slug: string, color: ProductColor, size: ProductSize) => Promise<void>;
+  updateQuantity: (slug: string, color: ProductColor, size: ProductSize, quantity: number) => Promise<void>;
+  clearCart: () => Promise<void>;
+  refreshCart: () => Promise<void>;
   totalCount: number;
   totalPrice: number;
+  isLoading: boolean;
 };
-
-const STORAGE_KEY = "nox-cart-v1";
 
 const CartContext = createContext<CartContextValue | null>(null);
 
-function parsePriceFromLabel(priceLabel: string): number | null {
-  const digits = priceLabel.replace(/[^0-9]/g, "");
-  if (!digits) {
-    return null;
-  }
-
-  return Number.parseInt(digits, 10);
-}
-
-function normalizeProductPrice(product: Product): Product {
-  const parsed = parsePriceFromLabel(product.priceLabel);
-
-  if (!parsed || parsed === product.priceValue) {
-    return product;
-  }
-
-  return { ...product, priceValue: parsed };
-}
-
-function normalizeStoredItem(item: Partial<CartItem>): CartItem | null {
-  if (!item.product || !item.color || typeof item.quantity !== "number") {
-    return null;
-  }
-
-  return {
-    product: normalizeProductPrice(item.product),
-    color: item.color,
-    quantity: item.quantity,
-    size: item.size ?? "M",
-  };
-}
-
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>(() => {
-    if (typeof window === "undefined") {
-      return [];
+  const { token, status: authStatus, logout } = useAuth();
+  const { showToast } = useToast();
+  const [items, setItems] = useState<CartItem[]>([]);
+  const [syncStatus, setSyncStatus] = useState<"idle" | "loading">("loading");
+
+  const refreshCart = useCallback(async () => {
+    if (!token) {
+      setItems([]);
+      setSyncStatus("idle");
+      return;
     }
 
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      return [];
-    }
+    setSyncStatus("loading");
 
     try {
-      const parsed = JSON.parse(raw) as Partial<CartItem>[];
-      return parsed.map(normalizeStoredItem).filter((item): item is CartItem => item !== null);
-    } catch {
-      return [];
+      const snapshot = await cartApi.getCart(token);
+      setItems(snapshot.items);
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        logout();
+      } else {
+        showToast(getErrorMessage(error), "error");
+      }
+
+      setItems([]);
+    } finally {
+      setSyncStatus("idle");
     }
-  });
+  }, [logout, showToast, token]);
 
   useEffect(() => {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-  }, [items]);
+    void refreshCart();
+  }, [refreshCart]);
 
   const value = useMemo<CartContextValue>(() => {
-    const addItem = (
+    const addItem = async (
       product: Product,
       quantity = 1,
-      color: ProductColor = "Black",
-      size: ProductSize = "M"
+      _color: ProductColor = "Black",
+      _size: ProductSize = "M"
     ) => {
-      setItems((prev) => {
-        const existing = prev.find(
-          (item) => item.product.slug === product.slug && item.color === color && item.size === size
-        );
+      if (!token) {
+        throw new ApiError("Please sign in to use the cart", 401);
+      }
 
-        if (existing) {
-          return prev.map((item) =>
-            item.product.slug === product.slug && item.color === color && item.size === size
-              ? { ...item, quantity: item.quantity + quantity }
-              : item
-          );
+      try {
+        const snapshot = await cartApi.addItem(token, product.id, quantity);
+        setItems(snapshot.items);
+        showToast("Added to cart", "success");
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 401) {
+          logout();
         }
 
-        return [...prev, { product: normalizeProductPrice(product), quantity, color, size }];
-      });
+        throw error;
+      }
     };
 
-    const removeItem = (slug: string, color: ProductColor, size: ProductSize) => {
-      setItems((prev) =>
-        prev.filter((item) => !(item.product.slug === slug && item.color === color && item.size === size))
-      );
-    };
+    const removeItem = async (slug: string, _color: ProductColor, _size: ProductSize) => {
+      if (!token) {
+        throw new ApiError("Please sign in to use the cart", 401);
+      }
 
-    const updateQuantity = (slug: string, color: ProductColor, size: ProductSize, quantity: number) => {
-      if (quantity <= 0) {
-        removeItem(slug, color, size);
+      const item = items.find((entry) => entry.product.slug === slug);
+      if (!item) {
         return;
       }
 
-      setItems((prev) =>
-        prev.map((item) =>
-          item.product.slug === slug && item.color === color && item.size === size
-            ? { ...item, quantity }
-            : item
-        )
-      );
+      try {
+        const snapshot = await cartApi.removeItem(token, item.product.id);
+        setItems(snapshot.items);
+        showToast("Removed from cart", "info");
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 401) {
+          logout();
+        }
+
+        throw error;
+      }
     };
 
-    const clearCart = () => {
+    const updateQuantity = async (slug: string, _color: ProductColor, _size: ProductSize, quantity: number) => {
+      if (!token) {
+        throw new ApiError("Please sign in to use the cart", 401);
+      }
+
+      const item = items.find((entry) => entry.product.slug === slug);
+      if (!item) {
+        return;
+      }
+
+      if (quantity <= 0) {
+        await removeItem(slug, "Black", "M");
+        return;
+      }
+
+      try {
+        const snapshot = await cartApi.updateItem(token, item.product.id, quantity);
+        setItems(snapshot.items);
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 401) {
+          logout();
+        }
+
+        throw error;
+      }
+    };
+
+    const clearCart = async () => {
+      if (!token) {
+        setItems([]);
+        return;
+      }
+
+      await cartApi.clearCart(token);
       setItems([]);
     };
 
@@ -140,10 +152,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       removeItem,
       updateQuantity,
       clearCart,
+      refreshCart,
       totalCount,
       totalPrice,
+      isLoading: authStatus === "loading" || syncStatus === "loading",
     };
-  }, [items]);
+  }, [authStatus, items, refreshCart, showToast, syncStatus, token]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

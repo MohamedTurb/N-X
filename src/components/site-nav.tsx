@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCart } from "./cart-provider";
+import { useAuth } from "./auth-provider";
 
 const links = [
   { href: "/intro", label: "Intro" },
@@ -10,11 +11,14 @@ const links = [
   { href: "/shop", label: "Shop" },
   { href: "/lookbook", label: "Lookbook" },
   { href: "/cart", label: "Cart" },
+  { href: "/orders", label: "Orders" },
+  { href: "/orders/all", label: "Admin" },
 ];
 
 export function SiteNav() {
   const pathname = usePathname();
   const { totalCount } = useCart();
+  const { isAuthenticated, isAdmin, logout, status } = useAuth();
 
   return (
     <header className="sticky top-0 z-30 border-b border-zinc-900/80 bg-black/85 backdrop-blur">
@@ -32,6 +36,16 @@ export function SiteNav() {
           {links.map((link) => {
             const isActive = pathname === link.href;
             const isCartLink = link.href === "/cart";
+            const isOrdersLink = link.href === "/orders";
+            const isAdminLink = link.href === "/orders/all";
+
+            if (isOrdersLink && !isAuthenticated) {
+              return null;
+            }
+
+            if (isAdminLink && !isAdmin) {
+              return null;
+            }
 
             return (
               <Link
@@ -53,6 +67,24 @@ export function SiteNav() {
               </Link>
             );
           })}
+          {status !== "loading" ? (
+            isAuthenticated ? (
+              <button
+                type="button"
+                onClick={logout}
+                className="whitespace-nowrap px-2 py-1 font-body text-[10px] uppercase tracking-[0.15em] text-zinc-400 transition hover:text-white sm:px-3 sm:text-xs sm:tracking-[0.2em]"
+              >
+                Logout
+              </button>
+            ) : (
+              <Link
+                href="/login"
+                className="whitespace-nowrap px-2 py-1 font-body text-[10px] uppercase tracking-[0.15em] text-zinc-400 transition hover:text-white sm:px-3 sm:text-xs sm:tracking-[0.2em]"
+              >
+                Login
+              </Link>
+            )
+          ) : null}
           </div>
         </div>
       </nav>

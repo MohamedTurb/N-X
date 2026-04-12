@@ -2,23 +2,63 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import type { Product } from "../lib/products-api";
+import type { Product } from "../services/product-api";
 import type { ProductColor, ProductSize } from "./cart-provider";
 import { useCart } from "./cart-provider";
+import { useAuth } from "./auth-provider";
+import { ApiError, getErrorMessage } from "../services/api";
+import { useToast } from "./toast-provider";
 
 export function ProductActions({ product }: { product: Product }) {
   const router = useRouter();
   const { addItem } = useCart();
+  const { isAuthenticated } = useAuth();
+  const { showToast } = useToast();
   const [color, setColor] = useState<ProductColor>("Black");
   const [size, setSize] = useState<ProductSize>("M");
+  const [isBusy, setIsBusy] = useState(false);
 
-  const handleAdd = () => {
-    addItem(product, 1, color, size);
+  const handleAdd = async () => {
+    if (!isAuthenticated) {
+      router.push(`/login?next=/shop/${product.slug}`);
+      return;
+    }
+
+    try {
+      setIsBusy(true);
+      await addItem(product, 1, color, size);
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        router.push(`/login?next=/shop/${product.slug}`);
+        return;
+      }
+
+      showToast(getErrorMessage(error), "error");
+    } finally {
+      setIsBusy(false);
+    }
   };
 
-  const handleBuyNow = () => {
-    addItem(product, 1, color, size);
-    router.push("/checkout");
+  const handleBuyNow = async () => {
+    if (!isAuthenticated) {
+      router.push(`/login?next=/shop/${product.slug}`);
+      return;
+    }
+
+    try {
+      setIsBusy(true);
+      await addItem(product, 1, color, size);
+      router.push("/checkout");
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        router.push(`/login?next=/shop/${product.slug}`);
+        return;
+      }
+
+      showToast(getErrorMessage(error), "error");
+    } finally {
+      setIsBusy(false);
+    }
   };
 
   return (
@@ -67,12 +107,14 @@ export function ProductActions({ product }: { product: Product }) {
       <div className="flex flex-col gap-3 sm:flex-row">
         <button
           onClick={handleAdd}
+          disabled={isBusy}
           className="border border-white px-6 py-3 font-body text-[11px] tracking-[0.15em] transition hover:bg-white hover:text-black sm:text-xs sm:tracking-[0.25em]"
         >
           ADD TO CART
         </button>
         <button
           onClick={handleBuyNow}
+          disabled={isBusy}
           className="border border-accent bg-accent px-6 py-3 font-body text-[11px] tracking-[0.15em] text-white transition hover:opacity-90 sm:text-xs sm:tracking-[0.25em]"
         >
           BUY NOW

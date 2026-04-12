@@ -3,16 +3,21 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import type { Category, Product } from "../lib/products-api";
+import type { Product } from "../services/product-api";
+import { getErrorMessage } from "../services/api";
 import { useCart } from "./cart-provider";
+import { useAuth } from "./auth-provider";
+import { useToast } from "./toast-provider";
 
 type ShopGridProps = {
   products: Product[];
 };
 
 export function ShopGrid({ products }: ShopGridProps) {
-  const [filter, setFilter] = useState<Category>("All");
+  const [filter, setFilter] = useState<string>("All");
   const { addItem } = useCart();
+  const { isAuthenticated } = useAuth();
+  const { showToast } = useToast();
 
   const shopProducts = useMemo(() => {
     if (filter === "All") {
@@ -22,13 +27,29 @@ export function ShopGrid({ products }: ShopGridProps) {
     return products.filter((item) => item.category === filter);
   }, [filter, products]);
 
+  const categories = useMemo(() => {
+    const unique = new Set(products.map((product) => product.category));
+    return ["All", ...Array.from(unique)];
+  }, [products]);
+
+  const handleAdd = (product: Product) => {
+    if (!isAuthenticated) {
+      window.location.href = "/login?next=/shop";
+      return;
+    }
+
+    void addItem(product, 1, "Black", "M").catch((error) => {
+      showToast(getErrorMessage(error), "error");
+    });
+  };
+
   return (
     <>
       <div className="mb-10 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="font-display text-4xl tracking-[0.08em] sm:text-6xl">SHOP</h1>
         <div className="overflow-x-auto">
           <div className="flex min-w-max items-center gap-2 rounded-full border border-zinc-700 p-1">
-            {(["All", "Hoodies", "Tees"] as Category[]).map((item) => (
+            {categories.map((item) => (
               <button
                 key={item}
                 onClick={() => setFilter(item)}
@@ -78,7 +99,7 @@ export function ShopGrid({ products }: ShopGridProps) {
                   View Details
                 </Link>
                 <button
-                  onClick={() => addItem(product, 1, "Black", "M")}
+                  onClick={() => handleAdd(product)}
                   className="border border-zinc-600 px-3 py-2 text-[10px] uppercase tracking-[0.18em] text-zinc-300 transition hover:border-white hover:text-white"
                 >
                   Add
