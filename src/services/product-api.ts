@@ -34,6 +34,23 @@ let productCachePromise: Promise<Product[]> | null = null;
 
 type ProductsResponse = Product[] | { data: BackendProduct[]; pagination?: { page: number; limit: number; total: number; totalPages: number } };
 
+export type ProductsPage = {
+  items: Product[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+};
+
+export type GetProductsPageOptions = {
+  search?: string;
+  category?: string;
+  page?: number;
+  limit?: number;
+};
+
 function toSlug(value: string) {
   return value
     .toLowerCase()
@@ -99,6 +116,53 @@ export async function getProducts(forceRefresh = false) {
   return productCachePromise.finally(() => {
     productCachePromise = null;
   });
+}
+
+export async function getProductsPage(options: GetProductsPageOptions = {}) {
+  const searchParams = new URLSearchParams();
+
+  if (options.search) {
+    searchParams.set("search", options.search);
+  }
+
+  if (options.category) {
+    searchParams.set("category", options.category);
+  }
+
+  if (options.page) {
+    searchParams.set("page", String(options.page));
+  }
+
+  if (options.limit) {
+    searchParams.set("limit", String(options.limit));
+  }
+
+  const query = searchParams.toString();
+  const payload = await requestJson<ProductsResponse>(query ? `/products?${query}` : "/products");
+
+  if (Array.isArray(payload)) {
+    const items = payload.map(mapProduct);
+
+    return {
+      items,
+      pagination: {
+        page: 1,
+        limit: items.length || options.limit || 12,
+        total: items.length,
+        totalPages: 1,
+      },
+    } satisfies ProductsPage;
+  }
+
+  return {
+    items: payload.data.map(mapProduct),
+    pagination: payload.pagination ?? {
+      page: options.page ?? 1,
+      limit: options.limit ?? 12,
+      total: payload.data.length,
+      totalPages: 1,
+    },
+  } satisfies ProductsPage;
 }
 
 export async function getProductById(id: number, forceRefresh = false) {

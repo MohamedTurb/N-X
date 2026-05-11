@@ -12,11 +12,13 @@ import {
   createProduct,
   deleteProduct,
   getProducts,
+  getProductsPage,
   uploadProductImage,
   type Product,
   updateProduct,
 } from "../../../services/product-api";
 import { useToast } from "../../../components/toast-provider";
+import { AdminHeader, AdminOrdersSection, AdminProductsSection, AdminStats } from "../../../components/admin-dashboard";
 
 function formatCurrency(value: number) {
   return `EGP ${value.toLocaleString("en-US")}`;
@@ -54,9 +56,12 @@ function AdminDashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [orderStatusDrafts, setOrderStatusDrafts] = useState<Record<number, OrderStatus>>({});
   const [updatingOrderId, setUpdatingOrderId] = useState<number | null>(null);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [productPagination, setProductPagination] = useState({ page: 1, limit: 6, total: 0, totalPages: 1 });
   const [orderFilter, setOrderFilter] = useState<OrderFilter>("all");
   const [productQuery, setProductQuery] = useState("");
+  const [debouncedProductQuery, setDebouncedProductQuery] = useState("");
   const [newProduct, setNewProduct] = useState<ProductFormState>(EMPTY_PRODUCT_FORM);
   const [newProductImageKey, setNewProductImageKey] = useState(0);
   const [isCreatingProduct, setIsCreatingProduct] = useState(false);
@@ -65,6 +70,7 @@ function AdminDashboard() {
   const [editingProductImageKey, setEditingProductImageKey] = useState(0);
   const [savingProductId, setSavingProductId] = useState<number | null>(null);
   const [deletingProductId, setDeletingProductId] = useState<number | null>(null);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -78,10 +84,7 @@ function AdminDashboard() {
 
       try {
         setIsLoading(true);
-        const [ordersResponse, productsResponse] = await Promise.all([
-          orderApi.getAllOrders(token),
-          getProducts(),
-        ]);
+        const [ordersResponse, productsResponse] = await Promise.all([orderApi.getAllOrders(token), getProducts()]);
 
         if (active) {
           setOrders(ordersResponse);
@@ -91,7 +94,7 @@ function AdminDashboard() {
               return acc;
             }, {})
           );
-          setProducts(productsResponse);
+          setAllProducts(productsResponse);
         }
       } catch (loadError) {
         if (loadError instanceof ApiError && loadError.status === 401) {
@@ -118,13 +121,62 @@ function AdminDashboard() {
     };
   }, [logout, showToast, token]);
 
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      setDebouncedProductQuery(productQuery.trim());
+    }, 300);
+
+    return () => window.clearTimeout(timeout);
+  }, [productQuery]);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadProducts = async () => {
+      if (!token) {
+        return;
+      }
+
+      try {
+        setIsLoadingProducts(true);
+        const response = await getProductsPage({
+          search: debouncedProductQuery || undefined,
+          page: productPagination.page,
+          limit: productPagination.limit,
+        });
+
+        if (active) {
+          setProducts(response.items);
+          setProductPagination(response.pagination);
+        }
+      } catch (loadError) {
+        if (loadError instanceof ApiError && loadError.status === 401) {
+          logout();
+          return;
+        }
+
+        showToast(getErrorMessage(loadError), "error");
+      } finally {
+        if (active) {
+          setIsLoadingProducts(false);
+        }
+      }
+    };
+
+    void loadProducts();
+
+    return () => {
+      active = false;
+    };
+  }, [debouncedProductQuery, logout, productPagination.limit, productPagination.page, showToast, token]);
+
   const stats = useMemo(() => {
     const revenue = orders.reduce((sum, order) => sum + order.totalPrice, 0);
     const pending = orders.filter((order) => order.status === "pending").length;
-    const lowStock = products.filter((product) => product.stockLeft <= 5).length;
+    const lowStock = allProducts.filter((product) => product.stockLeft <= 5).length;
 
     return { revenue, pending, lowStock };
-  }, [orders, products]);
+  }, [allProducts, orders]);
 
   const filteredOrders = useMemo(() => {
     if (orderFilter === "all") {
@@ -133,22 +185,6 @@ function AdminDashboard() {
 
     return orders.filter((order) => order.status === orderFilter);
   }, [orderFilter, orders]);
-
-  const filteredProducts = useMemo(() => {
-    const query = productQuery.trim().toLowerCase();
-
-    if (!query) {
-      return products;
-    }
-
-    return products.filter((product) => {
-      return (
-        product.name.toLowerCase().includes(query) ||
-        product.category.toLowerCase().includes(query) ||
-        product.categoryKey.toLowerCase().includes(query)
-      );
-    });
-  }, [productQuery, products]);
 
   const handleProductImageSelect = async (
     event: ChangeEvent<HTMLInputElement>,
@@ -247,6 +283,7 @@ function AdminDashboard() {
         imageUrl: newProduct.imageUrl,
         imagePublicId: newProduct.imagePublicId,
       });
+      setAllProducts((current) => [created, ...current]);
       setProducts((current) => [created, ...current]);
       setNewProduct(EMPTY_PRODUCT_FORM);
       setNewProductImageKey((current) => current + 1);
@@ -306,6 +343,7 @@ function AdminDashboard() {
         imageUrl: editingProduct.imageUrl,
         imagePublicId: editingProduct.imagePublicId,
       });
+      setAllProducts((current) => current.map((product) => (product.id === productId ? updated : product)));
       setProducts((current) => current.map((product) => (product.id === productId ? updated : product)));
       setEditingProductId(null);
       setEditingProductImageKey((current) => current + 1);
@@ -334,6 +372,7 @@ function AdminDashboard() {
     try {
       setDeletingProductId(product.id);
       await deleteProduct(token, product.id);
+      setAllProducts((current) => current.filter((item) => item.id !== product.id));
       setProducts((current) => current.filter((item) => item.id !== product.id));
       if (editingProductId === product.id) {
         setEditingProductId(null);
@@ -352,22 +391,22 @@ function AdminDashboard() {
     }
   };
 
+  const handlePreviousProductPage = () => {
+    setProductPagination((current) => ({ ...current, page: Math.max(1, current.page - 1) }));
+  };
+
+  const handleNextProductPage = () => {
+    setProductPagination((current) => ({ ...current, page: Math.min(current.totalPages, current.page + 1) }));
+  };
+
+  const handleQueryChange = (value: string) => {
+    setProductPagination((current) => ({ ...current, page: 1, totalPages: current.totalPages }));
+    setProductQuery(value);
+  };
+
   return (
     <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 md:py-20">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="font-display text-[10px] tracking-[0.35em] text-zinc-500 sm:text-xs sm:tracking-[0.5em]">ADMIN</p>
-          <h1 className="mt-4 font-display text-4xl tracking-[0.08em] sm:text-6xl">ORDER CONTROL</h1>
-        </div>
-        <div className="text-right">
-          <p className="font-body text-[10px] uppercase tracking-[0.2em] text-zinc-400 sm:text-xs sm:tracking-[0.3em]">
-            {user?.username}
-          </p>
-          <Link href="/orders" className="mt-3 inline-block text-xs uppercase tracking-[0.22em] text-accent hover:text-white">
-            My Orders
-          </Link>
-        </div>
-      </div>
+      <AdminHeader username={user?.username} />
 
       {isLoading ? (
         <div className="mt-12 border border-zinc-800 p-6 text-center sm:p-8">
@@ -379,359 +418,57 @@ function AdminDashboard() {
         </div>
       ) : (
         <>
-          <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 sm:gap-4">
-            <div className="border border-zinc-800 bg-night p-5">
-              <p className="text-[10px] uppercase tracking-[0.22em] text-zinc-500">Revenue</p>
-              <p className="mt-3 font-display text-3xl tracking-[0.06em]">{formatCurrency(stats.revenue)}</p>
-            </div>
-            <div className="border border-zinc-800 bg-night p-5">
-              <p className="text-[10px] uppercase tracking-[0.22em] text-zinc-500">Pending Orders</p>
-              <p className="mt-3 font-display text-3xl tracking-[0.06em]">{stats.pending}</p>
-            </div>
-            <div className="border border-zinc-800 bg-night p-5">
-              <p className="text-[10px] uppercase tracking-[0.22em] text-zinc-500">Low Stock Items</p>
-              <p className="mt-3 font-display text-3xl tracking-[0.06em]">{stats.lowStock}</p>
-            </div>
-          </div>
+          <AdminStats revenue={stats.revenue} pending={stats.pending} lowStock={stats.lowStock} />
 
           <div className="mt-12 grid gap-8 md:grid-cols-[1fr_350px] xl:grid-cols-[1.35fr_0.9fr] md:gap-10">
-            <section>
-              <div className="flex items-end justify-between gap-4">
-                <h2 className="font-display text-3xl tracking-[0.06em] sm:text-4xl">All Orders</h2>
-                <span className="text-[10px] uppercase tracking-[0.22em] text-zinc-500 sm:text-xs">GET /orders/all</span>
-              </div>
+            <AdminOrdersSection
+              orders={orders.filter((order) => orderFilter === "all" || order.status === orderFilter)}
+              orderFilter={orderFilter}
+              orderStatusDrafts={orderStatusDrafts}
+              updatingOrderId={updatingOrderId}
+              filteredOrderCount={orders.filter((order) => orderFilter === "all" || order.status === orderFilter).length}
+              onFilterChange={setOrderFilter}
+              onStatusDraftChange={handleOrderStatusDraft}
+              onStatusSave={handleOrderStatusSave}
+            />
 
-              <div className="mt-5 flex flex-col gap-4 border border-zinc-800 bg-night p-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="space-y-3">
-                  <label className="text-[10px] uppercase tracking-[0.2em] text-zinc-400">Filter Status</label>
-                  <div className="overflow-x-auto pb-1">
-                    <div className="flex w-max flex-nowrap gap-2 rounded-full border border-zinc-700/90 bg-black/70 p-1.5">
-                    {(["all", ...ORDER_STATUSES] as OrderFilter[]).map((status) => {
-                      const isActive = orderFilter === status;
-
-                      return (
-                        <button
-                          key={status}
-                          type="button"
-                          onClick={() => setOrderFilter(status)}
-                          className={`rounded-full border px-5 py-2.5 text-[10px] uppercase tracking-[0.22em] transition duration-200 sm:px-6 sm:text-xs sm:tracking-[0.28em] ${
-                            isActive
-                              ? "border-accent bg-accent text-white shadow-[0_8px_24px_rgba(255,0,51,0.28)]"
-                              : "border-zinc-700 bg-black text-zinc-300 hover:border-zinc-500 hover:text-white"
-                          }`}
-                        >
-                          {status === "all" ? "All" : status}
-                        </button>
-                      );
-                    })}
-                    </div>
-                  </div>
-                </div>
-                <span className="text-[10px] uppercase tracking-[0.18em] text-zinc-500 sm:ml-auto sm:text-right">
-                  Showing {filteredOrders.length} / {orders.length}
-                </span>
-              </div>
-
-              <div className="mt-5 space-y-4">
-                {filteredOrders.length === 0 ? (
-                  <div className="border border-zinc-800 p-6 text-center">
-                    <p className="text-xs uppercase tracking-[0.2em] text-zinc-400">
-                      {orders.length === 0 ? "No orders found." : "No orders match this filter."}
-                    </p>
-                  </div>
-                ) : (
-                  filteredOrders.map((order) => (
-                    <article key={order.id} className="border border-zinc-800 bg-night p-5 sm:p-6">
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                          <p className="font-display text-2xl tracking-[0.05em]">Order #{order.id}</p>
-                          <p className="mt-1 text-xs uppercase tracking-[0.18em] text-zinc-400">User #{order.userId}</p>
-                          <p className="mt-1 max-w-full break-words text-xs uppercase tracking-[0.18em] text-zinc-500">
-                            Name: {order.customerName || order.userName || "N/A"}
-                          </p>
-                          <p className="mt-1 max-w-full break-all text-xs uppercase tracking-[0.18em] text-zinc-500">
-                            Email: {order.customerEmail || order.userEmail || "N/A"}
-                          </p>
-                          <p className="mt-1 max-w-full break-words text-xs uppercase tracking-[0.18em] text-zinc-500">
-                            Phone: {order.customerPhone || "N/A"}
-                          </p>
-                          <p className="mt-1 max-w-full break-words text-xs tracking-[0.08em] text-zinc-500">
-                            Address: {order.shippingAddress || "N/A"}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm text-zinc-300">{order.totalPriceLabel}</p>
-                          <p className="mt-1 text-xs uppercase tracking-[0.18em] text-zinc-400">
-                            {new Date(order.createdAt).toLocaleString()}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="mt-4 flex flex-col gap-3 border-t border-zinc-900 pt-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex items-center gap-3">
-                          <label htmlFor={`status-${order.id}`} className="text-[10px] uppercase tracking-[0.2em] text-zinc-400">
-                            Status
-                          </label>
-                          <select
-                            id={`status-${order.id}`}
-                            value={orderStatusDrafts[order.id] ?? order.status}
-                            onChange={(event) => handleOrderStatusDraft(order.id, event.target.value as OrderStatus)}
-                            className="border border-zinc-700 bg-black px-3 py-2 text-xs uppercase tracking-[0.14em] text-zinc-100"
-                          >
-                            {ORDER_STATUSES.map((status) => (
-                              <option key={status} value={status}>
-                                {status}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => void handleOrderStatusSave(order.id)}
-                          disabled={
-                            updatingOrderId === order.id ||
-                            (orderStatusDrafts[order.id] ?? order.status) === order.status
-                          }
-                          className="border border-white px-4 py-2 text-[10px] uppercase tracking-[0.18em] transition hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-40"
-                        >
-                          {updatingOrderId === order.id ? "Updating..." : "Update Status"}
-                        </button>
-                      </div>
-
-                      <div className="mt-5 space-y-3 text-sm">
-                        {order.items.map((item) => (
-                          <div key={item.id} className="flex items-center justify-between gap-4 border-t border-zinc-900 pt-3">
-                            <span className="max-w-[70%] truncate text-zinc-300">
-                              {item.productName} ({item.color}) x {item.quantity}
-                            </span>
-                            <span>{item.priceLabel}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </article>
-                  ))
-                )}
-              </div>
-            </section>
-
-            <aside>
-              <div className="flex items-end justify-between gap-4">
-                <h2 className="font-display text-3xl tracking-[0.06em] sm:text-4xl">Catalog</h2>
-                <span className="text-[10px] uppercase tracking-[0.22em] text-zinc-500 sm:text-xs">GET /products</span>
-              </div>
-
-              <div className="mt-5 border border-zinc-800 bg-night p-4">
-                <label htmlFor="product-search" className="text-[10px] uppercase tracking-[0.2em] text-zinc-400">
-                  Quick Search
-                </label>
-                <input
-                  id="product-search"
-                  value={productQuery}
-                  onChange={(event) => setProductQuery(event.target.value)}
-                  placeholder="Search by name or category"
-                  className="mt-2 w-full border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500"
-                />
-                <p className="mt-2 text-[10px] uppercase tracking-[0.16em] text-zinc-500">
-                  Showing {filteredProducts.length} / {products.length}
-                </p>
-              </div>
-
-              <div className="mt-5 border border-zinc-800 bg-night p-5">
-                <p className="text-[10px] uppercase tracking-[0.22em] text-zinc-500">Create Product</p>
-                <div className="mt-4 grid gap-3">
-                  <input
-                    value={newProduct.name}
-                    onChange={(event) => setNewProduct((current) => ({ ...current, name: event.target.value }))}
-                    placeholder="Name"
-                    className="border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500"
-                  />
-                  <textarea
-                    value={newProduct.description}
-                    onChange={(event) => setNewProduct((current) => ({ ...current, description: event.target.value }))}
-                    placeholder="Description"
-                    rows={3}
-                    className="border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500"
-                  />
-                  <div className="grid grid-cols-2 gap-3">
-                    <input
-                      value={newProduct.price}
-                      onChange={(event) => setNewProduct((current) => ({ ...current, price: event.target.value }))}
-                      placeholder="Price"
-                      className="border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500"
-                    />
-                    <input
-                      value={newProduct.stock}
-                      onChange={(event) => setNewProduct((current) => ({ ...current, stock: event.target.value }))}
-                      placeholder="Stock"
-                      className="border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500"
-                    />
-                  </div>
-                  <input
-                    value={newProduct.category}
-                    onChange={(event) => setNewProduct((current) => ({ ...current, category: event.target.value }))}
-                    placeholder="Category key (e.g. tops)"
-                    className="border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500"
-                  />
-                  <div className="grid gap-2 rounded border border-zinc-800 bg-black/30 p-3">
-                    <label className="text-[10px] uppercase tracking-[0.2em] text-zinc-400">Choose Image From Device</label>
-                    <input
-                      key={newProductImageKey}
-                      type="file"
-                      accept="image/*"
-                      onChange={(event) =>
-                        void handleProductImageSelect(event, (imageUrl, imagePublicId) =>
-                          setNewProduct((current) => ({ ...current, imageUrl, imagePublicId }))
-                        )
-                      }
-                      className="text-sm text-zinc-300 file:mr-4 file:border-0 file:bg-accent file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:opacity-90"
-                    />
-                    <p className="text-[10px] uppercase tracking-[0.16em] text-zinc-500">
-                      The selected image will be saved with the product.
-                    </p>
-                  </div>
-                  <input
-                    value={newProduct.imageUrl}
-                    onChange={(event) => setNewProduct((current) => ({ ...current, imageUrl: event.target.value }))}
-                    placeholder="Or paste image URL"
-                    className="border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => void handleCreateProduct()}
-                    disabled={isCreatingProduct}
-                    className="mt-1 border border-accent bg-accent px-4 py-2 text-[10px] uppercase tracking-[0.2em] text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {isCreatingProduct ? "Creating..." : "Create"}
-                  </button>
-                </div>
-              </div>
-
-              <div className="mt-5 space-y-4">
-                {filteredProducts.length === 0 ? (
-                  <div className="border border-zinc-800 p-6 text-center">
-                    <p className="text-xs uppercase tracking-[0.2em] text-zinc-400">
-                      {products.length === 0 ? "No products found." : "No products match this search."}
-                    </p>
-                  </div>
-                ) : (
-                filteredProducts.map((product) => (
-                  <article key={product.id} className="border border-zinc-800 bg-night p-5">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <p className="font-display text-2xl tracking-[0.05em]">{product.name}</p>
-                        <p className="mt-1 text-xs uppercase tracking-[0.16em] text-zinc-400">{product.category}</p>
-                      </div>
-                      <span className={`text-xs uppercase tracking-[0.16em] ${product.stockLeft <= 5 ? "text-accent" : "text-zinc-400"}`}>
-                        Stock {product.stockLeft}
-                      </span>
-                    </div>
-                    <p className="mt-3 text-sm text-zinc-300">{product.priceLabel}</p>
-
-                    <div className="mt-4 flex items-center gap-3">
-                      <button
-                        type="button"
-                        onClick={() => startEditingProduct(product)}
-                        className="border border-zinc-600 px-3 py-1.5 text-[10px] uppercase tracking-[0.16em] text-zinc-200 transition hover:border-white hover:text-white"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => void handleDeleteProduct(product)}
-                        disabled={deletingProductId === product.id}
-                        className="border border-zinc-700 px-3 py-1.5 text-[10px] uppercase tracking-[0.16em] text-zinc-400 transition hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-40"
-                      >
-                        {deletingProductId === product.id ? "Deleting..." : "Delete"}
-                      </button>
-                    </div>
-
-                    {editingProductId === product.id ? (
-                      <div className="mt-4 grid gap-3 border-t border-zinc-900 pt-4">
-                        <input
-                          value={editingProduct.name}
-                          onChange={(event) => setEditingProduct((current) => ({ ...current, name: event.target.value }))}
-                          placeholder="Name"
-                          className="border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500"
-                        />
-                        <textarea
-                          value={editingProduct.description}
-                          onChange={(event) =>
-                            setEditingProduct((current) => ({ ...current, description: event.target.value }))
-                          }
-                          placeholder="Description"
-                          rows={3}
-                          className="border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500"
-                        />
-                        <div className="grid grid-cols-2 gap-3">
-                          <input
-                            value={editingProduct.price}
-                            onChange={(event) => setEditingProduct((current) => ({ ...current, price: event.target.value }))}
-                            placeholder="Price"
-                            className="border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500"
-                          />
-                          <input
-                            value={editingProduct.stock}
-                            onChange={(event) => setEditingProduct((current) => ({ ...current, stock: event.target.value }))}
-                            placeholder="Stock"
-                            className="border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500"
-                          />
-                        </div>
-                        <input
-                          value={editingProduct.category}
-                          onChange={(event) => setEditingProduct((current) => ({ ...current, category: event.target.value }))}
-                          placeholder="Category key"
-                          className="border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500"
-                        />
-                        <div className="grid gap-2 rounded border border-zinc-800 bg-black/30 p-3">
-                          <label className="text-[10px] uppercase tracking-[0.2em] text-zinc-400">Choose Image From Device</label>
-                          <input
-                            key={editingProductImageKey}
-                            type="file"
-                            accept="image/*"
-                            onChange={(event) =>
-                              void handleProductImageSelect(event, (imageUrl, imagePublicId) =>
-                                setEditingProduct((current) => ({ ...current, imageUrl, imagePublicId }))
-                              )
-                            }
-                            className="text-sm text-zinc-300 file:mr-4 file:border-0 file:bg-accent file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:opacity-90"
-                          />
-                          <p className="text-[10px] uppercase tracking-[0.16em] text-zinc-500">
-                            The selected image will replace the current product image.
-                          </p>
-                        </div>
-                        <input
-                          value={editingProduct.imageUrl}
-                          onChange={(event) => setEditingProduct((current) => ({ ...current, imageUrl: event.target.value }))}
-                          placeholder="Or paste image URL"
-                          className="border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500"
-                        />
-
-                        <div className="flex items-center gap-3">
-                          <button
-                            type="button"
-                            onClick={() => void handleSaveProduct(product.id)}
-                            disabled={savingProductId === product.id}
-                            className="border border-white px-4 py-2 text-[10px] uppercase tracking-[0.18em] transition hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-40"
-                          >
-                            {savingProductId === product.id ? "Saving..." : "Save"}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setEditingProductId(null);
-                              setEditingProductImageKey((current) => current + 1);
-                            }}
-                            className="border border-zinc-700 px-4 py-2 text-[10px] uppercase tracking-[0.18em] text-zinc-300 transition hover:border-zinc-400 hover:text-white"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    ) : null}
-                  </article>
-                ))) }
-              </div>
-            </aside>
+            <AdminProductsSection
+              products={products}
+              query={productQuery}
+              pagination={productPagination}
+              isLoadingProducts={isLoadingProducts}
+              newProduct={newProduct}
+              newProductImageKey={newProductImageKey}
+              isCreatingProduct={isCreatingProduct}
+              editingProductId={editingProductId}
+              editingProduct={editingProduct}
+              editingProductImageKey={editingProductImageKey}
+              savingProductId={savingProductId}
+              deletingProductId={deletingProductId}
+              onQueryChange={handleQueryChange}
+              onCreateProduct={() => void handleCreateProduct()}
+              onNewProductChange={setNewProduct}
+              onNewImageSelect={(event) =>
+                void handleProductImageSelect(event, (imageUrl, imagePublicId) =>
+                  setNewProduct((current) => ({ ...current, imageUrl, imagePublicId }))
+                )
+              }
+              onEditProductChange={setEditingProduct}
+              onEditImageSelect={(event) =>
+                void handleProductImageSelect(event, (imageUrl, imagePublicId) =>
+                  setEditingProduct((current) => ({ ...current, imageUrl, imagePublicId }))
+                )
+              }
+              onStartEditing={startEditingProduct}
+              onSaveProduct={(productId) => void handleSaveProduct(productId)}
+              onDeleteProduct={(product) => void handleDeleteProduct(product)}
+              onCancelEdit={() => {
+                setEditingProductId(null);
+                setEditingProductImageKey((current) => current + 1);
+              }}
+              onPreviousPage={handlePreviousProductPage}
+              onNextPage={handleNextProductPage}
+            />
           </div>
         </>
       )}
