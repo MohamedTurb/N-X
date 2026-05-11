@@ -13,6 +13,7 @@ This file lists the Render-specific environment variables and a short deploy che
 - `JWT_REFRESH_SECRET` (recommended)
 - `FRONTEND_URL` (for CORS)
 - `CORS_ORIGINS` (comma-separated allowed origins)
+- `CORS_ALLOW_VERCEL_PREVIEWS` (optional: set `true` to allow `*.vercel.app` preview URLs)
 - Cloudinary credentials (if using uploads):
   - `CLOUDINARY_CLOUD_NAME`
   - `CLOUDINARY_API_KEY`
@@ -29,6 +30,7 @@ Optional tuning env vars (defaults are safe):
 3. Set the start command to `npm run start:prod` (or `node src/server.js`).
 4. Ensure `NODE_ENV=production` and port is set (Render provides `PORT`).
 5. (Optional) Add a Render deploy hook URL to GitHub Actions as `RENDER_DEPLOY_HOOK_URL` for CI-driven deploys.
+6. On Vercel, set `NEXT_PUBLIC_API_BASE_URL` to your Render backend API URL (for example: `https://your-service.onrender.com/api`).
 
 ## Local testing
 Install dependencies and run locally (requires DB access):
