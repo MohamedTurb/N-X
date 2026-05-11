@@ -1,8 +1,40 @@
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 const { User, Cart } = require("../models");
 const ApiError = require("../utils/api-error");
 const asyncHandler = require("../utils/async-handler");
-const { generateToken } = require("../services/auth.service");
+const { generateAccessToken, generateRefreshToken } = require("../services/auth.service");
+
+const refreshCookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+  path: "/api/auth",
+  maxAge: Number(process.env.JWT_REFRESH_COOKIE_MAX_AGE_MS || 30 * 24 * 60 * 60 * 1000),
+};
+
+const normalizeRole = (role) => (role === "customer" ? "user" : role);
+
+const serializeUser = (user) => ({
+  id: user.id,
+  username: user.username,
+  email: user.email,
+  role: normalizeRole(user.role),
+  createdAt: user.createdAt,
+});
+
+const issueSession = (res, user, statusCode, message) => {
+  const token = generateAccessToken(user);
+  const refreshToken = generateRefreshToken(user);
+
+  res.cookie("nox_refresh_token", refreshToken, refreshCookieOptions);
+
+  return res.status(statusCode).json({
+    message,
+    token,
+    user: serializeUser(user),
+  });
+};
 
 const register = asyncHandler(async (req, res) => {
   const { username, email, password, role } = req.body;
@@ -22,24 +54,12 @@ const register = asyncHandler(async (req, res) => {
     username,
     email,
     password: hashedPassword,
-    role: role === "admin" ? "admin" : "customer",
+    role: role === "admin" ? "admin" : "user",
   });
 
   await Cart.create({ userId: user.id });
 
-  const token = generateToken(user);
-
-  return res.status(201).json({
-    message: "User registered successfully",
-    token,
-    user: {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      role: user.role,
-      createdAt: user.createdAt,
-    },
-  });
+  return issueSession(res, user, 201, "User registered successfully");
 });
 
 const login = asyncHandler(async (req, res) => {
@@ -59,22 +79,54 @@ const login = asyncHandler(async (req, res) => {
     throw new ApiError(401, "Invalid credentials");
   }
 
-  const token = generateToken(user);
+  return issueSession(res, user, 200, "Login successful");
+});
+
+const refresh = asyncHandler(async (req, res) => {
+  const refreshToken = req.cookies?.nox_refresh_token || req.body?.refreshToken;
+
+  if (!refreshToken) {
+    throw new ApiError(401, "Refresh token is required");
+  }
+
+  let payload;
+
+  try {
+    payload = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET);
+  } catch (_error) {
+    throw new ApiError(401, "Invalid refresh token");
+  }
+
+  const user = await User.findByPk(payload.id);
+
+  if (!user) {
+    throw new ApiError(401, "Invalid refresh token user");
+  }
+
+  const token = generateAccessToken(user);
+  const nextRefreshToken = generateRefreshToken(user);
+
+  res.cookie("nox_refresh_token", nextRefreshToken, refreshCookieOptions);
 
   return res.status(200).json({
-    message: "Login successful",
+    message: "Session refreshed",
     token,
-    user: {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      role: user.role,
-      createdAt: user.createdAt,
-    },
+    user: serializeUser(user),
   });
+});
+
+const logout = asyncHandler(async (_req, res) => {
+  res.clearCookie("nox_refresh_token", {
+    ...refreshCookieOptions,
+    maxAge: undefined,
+  });
+
+  return res.status(200).json({ message: "Logged out successfully" });
 });
 
 module.exports = {
   register,
   login,
+  refresh,
+  logout,
 };

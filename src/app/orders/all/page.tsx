@@ -12,6 +12,7 @@ import {
   createProduct,
   deleteProduct,
   getProducts,
+  uploadProductImage,
   type Product,
   updateProduct,
 } from "../../../services/product-api";
@@ -30,6 +31,7 @@ type ProductFormState = {
   stock: string;
   category: string;
   imageUrl: string;
+  imagePublicId: string;
 };
 
 const ORDER_STATUSES: OrderStatus[] = ["pending", "paid", "shipped", "delivered"];
@@ -41,27 +43,10 @@ const EMPTY_PRODUCT_FORM: ProductFormState = {
   stock: "",
   category: "",
   imageUrl: "",
+  imagePublicId: "",
 };
 
 type OrderFilter = "all" | OrderStatus;
-
-function fileToDataUrl(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        resolve(reader.result);
-        return;
-      }
-
-      reject(new Error("Failed to read image file"));
-    };
-
-    reader.onerror = () => reject(new Error("Failed to read image file"));
-    reader.readAsDataURL(file);
-  });
-}
 
 function AdminDashboard() {
   const { token, logout, user } = useAuth();
@@ -167,7 +152,7 @@ function AdminDashboard() {
 
   const handleProductImageSelect = async (
     event: ChangeEvent<HTMLInputElement>,
-    applyImageUrl: (imageUrl: string) => void
+    applyImage: (imageUrl: string, imagePublicId: string) => void
   ) => {
     const file = event.target.files?.[0];
 
@@ -181,11 +166,18 @@ function AdminDashboard() {
       return;
     }
 
+    if (!token) {
+      showToast("Please sign in again to upload images", "error");
+      event.target.value = "";
+      return;
+    }
+
     try {
-      const dataUrl = await fileToDataUrl(file);
-      applyImageUrl(dataUrl);
+      const upload = await uploadProductImage(token, file);
+      applyImage(upload.url, upload.publicId);
+      showToast("Image uploaded", "success");
     } catch {
-      showToast("Failed to load image file", "error");
+      showToast("Failed to upload image", "error");
       event.target.value = "";
     }
   };
@@ -253,6 +245,7 @@ function AdminDashboard() {
         stock,
         category: newProduct.category,
         imageUrl: newProduct.imageUrl,
+        imagePublicId: newProduct.imagePublicId,
       });
       setProducts((current) => [created, ...current]);
       setNewProduct(EMPTY_PRODUCT_FORM);
@@ -279,6 +272,7 @@ function AdminDashboard() {
       stock: String(product.stockLeft),
       category: product.categoryKey,
       imageUrl: product.imageUrl,
+      imagePublicId: product.imagePublicId ?? "",
     });
     setEditingProductImageKey((current) => current + 1);
   };
@@ -310,6 +304,7 @@ function AdminDashboard() {
         stock,
         category: editingProduct.category,
         imageUrl: editingProduct.imageUrl,
+        imagePublicId: editingProduct.imagePublicId,
       });
       setProducts((current) => current.map((product) => (product.id === productId ? updated : product)));
       setEditingProductId(null);
@@ -584,8 +579,8 @@ function AdminDashboard() {
                       type="file"
                       accept="image/*"
                       onChange={(event) =>
-                        void handleProductImageSelect(event, (imageUrl) =>
-                          setNewProduct((current) => ({ ...current, imageUrl }))
+                        void handleProductImageSelect(event, (imageUrl, imagePublicId) =>
+                          setNewProduct((current) => ({ ...current, imageUrl, imagePublicId }))
                         )
                       }
                       className="text-sm text-zinc-300 file:mr-4 file:border-0 file:bg-accent file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:opacity-90"
@@ -694,8 +689,8 @@ function AdminDashboard() {
                             type="file"
                             accept="image/*"
                             onChange={(event) =>
-                              void handleProductImageSelect(event, (imageUrl) =>
-                                setEditingProduct((current) => ({ ...current, imageUrl }))
+                              void handleProductImageSelect(event, (imageUrl, imagePublicId) =>
+                                setEditingProduct((current) => ({ ...current, imageUrl, imagePublicId }))
                               )
                             }
                             className="text-sm text-zinc-300 file:mr-4 file:border-0 file:bg-accent file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:opacity-90"

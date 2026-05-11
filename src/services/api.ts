@@ -19,6 +19,7 @@ type RequestJsonOptions = {
   headers?: HeadersInit;
   signal?: AbortSignal;
   cache?: RequestCache;
+  credentials?: RequestCredentials;
 };
 
 function joinPath(path: string) {
@@ -50,21 +51,36 @@ function toMessage(payload: unknown, status: number) {
 export async function requestJson<T>(path: string, options: RequestJsonOptions = {}): Promise<T> {
   const method = options.method ?? "GET";
   const cache = options.cache ?? "no-store";
+  const bodyIsFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
 
   const response = await fetch(joinPath(path), {
     method,
     headers: {
-      ...(options.body !== undefined ? { "Content-Type": "application/json" } : {}),
+      ...(options.body !== undefined && !bodyIsFormData ? { "Content-Type": "application/json" } : {}),
       ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}),
       ...(options.headers ?? {}),
     },
-    body: options.body === undefined ? undefined : JSON.stringify(options.body),
+    body:
+      options.body === undefined
+        ? undefined
+        : bodyIsFormData
+          ? (options.body as BodyInit)
+          : JSON.stringify(options.body),
     signal: options.signal,
     cache,
+    credentials: options.credentials ?? "include",
   });
 
   const text = await response.text();
-  const payload = text ? JSON.parse(text) : null;
+  let payload: unknown = null;
+
+  if (text) {
+    try {
+      payload = JSON.parse(text);
+    } catch {
+      payload = text;
+    }
+  }
 
   if (!response.ok) {
     throw new ApiError(toMessage(payload, response.status), response.status, payload);

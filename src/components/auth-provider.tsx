@@ -64,16 +64,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { showToast } = useToast();
 
   useEffect(() => {
-    const session = loadSession();
+    let active = true;
 
-    if (session) {
-      setToken(session.token);
-      setUser(session.user);
-      setStatus("authenticated");
-      return;
-    }
+    const bootstrapSession = async () => {
+      const session = loadSession();
 
-    setStatus("anonymous");
+      if (session) {
+        if (!active) {
+          return;
+        }
+
+        setToken(session.token);
+        setUser(session.user);
+        setStatus("authenticated");
+        return;
+      }
+
+      try {
+        const response = await authApi.refresh();
+
+        if (!active) {
+          return;
+        }
+
+        setToken(response.token);
+        setUser(response.user);
+        setStatus("authenticated");
+        saveSession({ token: response.token, user: response.user });
+      } catch {
+        if (active) {
+          setStatus("anonymous");
+        }
+      }
+    };
+
+    void bootstrapSession();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   const value = useMemo<AuthContextValue>(() => {
@@ -89,6 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       setStatus("anonymous");
       saveSession(null);
+      void authApi.logout().catch(() => undefined);
       showToast("Signed out", "info");
     };
 

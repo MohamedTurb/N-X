@@ -21,7 +21,7 @@ const seed = async () => {
         username: "noxcustomer",
         email: "customer@nox.com",
         password: customerPassword,
-        role: "customer",
+        role: "user",
       }),
     ]);
 

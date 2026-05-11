@@ -35,6 +35,15 @@ const Product = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: false,
     },
+    imagePublicId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    imageVariants: {
+      type: DataTypes.JSONB,
+      allowNull: false,
+      defaultValue: [],
+    },
   },
   {
     tableName: "products",

@@ -29,4 +29,6 @@ export type RegisterPayload = {
 export const authApi = {
   login: (payload: LoginPayload) => requestJson<AuthResponse>("/auth/login", { method: "POST", body: payload }),
   register: (payload: RegisterPayload) => requestJson<AuthResponse>("/auth/register", { method: "POST", body: payload }),
+  refresh: () => requestJson<AuthResponse>("/auth/refresh", { method: "POST" }),
+  logout: () => requestJson<{ message: string }>("/auth/logout", { method: "POST" }),
 };

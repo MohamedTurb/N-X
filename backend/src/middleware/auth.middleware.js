@@ -1,15 +1,30 @@
 const jwt = require("jsonwebtoken");
 const { User } = require("../models");
 
-const protect = async (req, res, next) => {
+const normalizeRole = (role) => (role === "customer" ? "user" : role);
+
+const getBearerToken = (req) => {
   const authHeader = req.headers.authorization;
 
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    return authHeader.split(" ")[1];
+  }
+
+  if (req.cookies?.accessToken) {
+    return req.cookies.accessToken;
+  }
+
+  return null;
+};
+
+const protect = async (req, res, next) => {
+  const token = getBearerToken(req);
+
+  if (!token) {
     return res.status(401).json({ message: "Unauthorized" });
   }
 
   try {
-    const token = authHeader.split(" ")[1];
     const payload = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findByPk(payload.id);
 
@@ -20,7 +35,7 @@ const protect = async (req, res, next) => {
     req.user = {
       id: user.id,
       email: user.email,
-      role: user.role,
+      role: normalizeRole(user.role),
     };
 
     return next();

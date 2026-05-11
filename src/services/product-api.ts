@@ -8,6 +8,8 @@ export type BackendProduct = {
   stock: number;
   category: string;
   imageUrl: string;
+  imagePublicId?: string | null;
+  imageVariants?: Array<{ width: number; url: string }>;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -23,10 +25,14 @@ export type Product = {
   category: string;
   categoryKey: string;
   imageUrl: string;
+  imagePublicId?: string | null;
+  imageVariants?: Array<{ width: number; url: string }>;
 };
 
 let productCache: Product[] | null = null;
 let productCachePromise: Promise<Product[]> | null = null;
+
+type ProductsResponse = Product[] | { data: BackendProduct[]; pagination?: { page: number; limit: number; total: number; totalPages: number } };
 
 function toSlug(value: string) {
   return value
@@ -65,6 +71,8 @@ export function mapProduct(product: BackendProduct): Product {
     categoryKey: product.category,
     category: titleCase(product.category),
     imageUrl: product.imageUrl,
+    imagePublicId: product.imagePublicId,
+    imageVariants: product.imageVariants,
   };
 }
 
@@ -82,7 +90,8 @@ export async function getProducts(forceRefresh = false) {
     return productCachePromise;
   }
 
-  productCachePromise = requestJson<BackendProduct[]>("/products").then((items) => {
+  productCachePromise = requestJson<ProductsResponse>("/products").then((payload) => {
+    const items = Array.isArray(payload) ? payload : payload.data;
     productCache = items.map(mapProduct);
     return productCache;
   });
@@ -145,4 +154,22 @@ export async function deleteProduct(token: string, id: number) {
 
   clearProductCache();
   return response;
+}
+
+export async function uploadProductImage(token: string, file: File) {
+  const formData = new FormData();
+  formData.append("image", file);
+
+  return requestJson<{
+    url: string;
+    publicId: string;
+    width: number;
+    height: number;
+    format: string;
+    variants: Array<{ width: number; url: string }>;
+  }>("/uploads/product-image", {
+    method: "POST",
+    token,
+    body: formData,
+  });
 }

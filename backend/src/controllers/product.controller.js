@@ -1,10 +1,91 @@
 const { Product } = require("../models");
+const { Op } = require("sequelize");
 const ApiError = require("../utils/api-error");
 const asyncHandler = require("../utils/async-handler");
+const { buildResponsiveVariants, destroyImage, uploadBuffer } = require("../services/cloudinary.service");
 
-const getProducts = asyncHandler(async (_req, res) => {
-  const products = await Product.findAll({ order: [["createdAt", "DESC"]] });
-  return res.status(200).json(products);
+const allowedUpdateFields = ["name", "description", "price", "stock", "category"];
+
+const readJsonValue = (value, fallback = []) => {
+  if (value === undefined || value === null || value === "") {
+    return fallback;
+  }
+
+  if (Array.isArray(value)) {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    try {
+      return JSON.parse(value);
+    } catch (_error) {
+      return fallback;
+    }
+  }
+
+  return fallback;
+};
+
+const uploadImageFromRequest = async (req) => {
+  if (!req.file) {
+    return null;
+  }
+
+  const result = await uploadBuffer(req.file.buffer, {
+    folder: process.env.CLOUDINARY_FOLDER || "nox/products",
+  });
+
+  return {
+    imageUrl: result.secure_url,
+    imagePublicId: result.public_id,
+    imageVariants: buildResponsiveVariants(result.public_id),
+  };
+};
+
+const getProducts = asyncHandler(async (req, res) => {
+  const search = typeof req.query.search === "string" ? req.query.search.trim() : "";
+  const category = typeof req.query.category === "string" ? req.query.category.trim() : "";
+  const pageParam = Number.parseInt(String(req.query.page || ""), 10);
+  const limitParam = Number.parseInt(String(req.query.limit || ""), 10);
+  const shouldPaginate = Number.isInteger(pageParam) || Number.isInteger(limitParam) || Boolean(search) || Boolean(category);
+
+  if (!shouldPaginate) {
+    const products = await Product.findAll({ order: [["createdAt", "DESC"]] });
+    return res.status(200).json(products);
+  }
+
+  const page = Number.isInteger(pageParam) && pageParam > 0 ? pageParam : 1;
+  const limit = Number.isInteger(limitParam) && limitParam > 0 ? Math.min(limitParam, 48) : 12;
+  const where = {};
+
+  if (search) {
+    where[Op.or] = [
+      { name: { [Op.iLike]: `%${search}%` } },
+      { description: { [Op.iLike]: `%${search}%` } },
+      { category: { [Op.iLike]: `%${search}%` } },
+    ];
+  }
+
+  if (category) {
+    where.category = category;
+  }
+
+  const result = await Product.findAndCountAll({
+    where,
+    order: [["createdAt", "DESC"]],
+    limit,
+    offset: (page - 1) * limit,
+  });
+
+  return res.status(200).json({
+    data: result.rows,
+    pagination: {
+      page,
+      limit,
+      total: result.count,
+      totalPages: Math.max(1, Math.ceil(result.count / limit)),
+    },
+  });
 });
 
 const getProductById = asyncHandler(async (req, res) => {
@@ -17,11 +98,18 @@ const getProductById = asyncHandler(async (req, res) => {
 });
 
 const createProduct = asyncHandler(async (req, res) => {
-  const { name, description, price, stock, category, imageUrl } = req.body;
+  const { name, description, price, stock, category, imageUrl, imagePublicId, imageVariants } = req.body;
 
-  if (!name || !description || price === undefined || stock === undefined || !category || !imageUrl) {
+  if (!name || !description || price === undefined || stock === undefined || !category || (!imageUrl && !req.file)) {
     throw new ApiError(400, "All product fields are required");
   }
+
+  const uploadedImage = await uploadImageFromRequest(req);
+  const nextImage = uploadedImage || {
+    imageUrl,
+    imagePublicId: imagePublicId || null,
+    imageVariants: readJsonValue(imageVariants),
+  };
 
   const product = await Product.create({
     name,
@@ -29,7 +117,7 @@ const createProduct = asyncHandler(async (req, res) => {
     price,
     stock,
     category,
-    imageUrl,
+    ...nextImage,
   });
 
   return res.status(201).json(product);
@@ -41,7 +129,39 @@ const updateProduct = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Product not found");
   }
 
-  await product.update(req.body);
+  const updates = {};
+
+  for (const field of allowedUpdateFields) {
+    if (req.body[field] !== undefined) {
+      updates[field] = req.body[field];
+    }
+  }
+
+  const uploadedImage = await uploadImageFromRequest(req);
+
+  if (uploadedImage) {
+    if (product.imagePublicId) {
+      await destroyImage(product.imagePublicId);
+    }
+
+    updates.imageUrl = uploadedImage.imageUrl;
+    updates.imagePublicId = uploadedImage.imagePublicId;
+    updates.imageVariants = uploadedImage.imageVariants;
+  } else {
+    if (req.body.imageUrl !== undefined) {
+      updates.imageUrl = req.body.imageUrl;
+    }
+
+    if (req.body.imagePublicId !== undefined) {
+      updates.imagePublicId = req.body.imagePublicId || null;
+    }
+
+    if (req.body.imageVariants !== undefined) {
+      updates.imageVariants = readJsonValue(req.body.imageVariants, product.imageVariants || []);
+    }
+  }
+
+  await product.update(updates);
   return res.status(200).json(product);
 });
 
@@ -49,6 +169,10 @@ const deleteProduct = asyncHandler(async (req, res) => {
   const product = await Product.findByPk(req.params.id);
   if (!product) {
     throw new ApiError(404, "Product not found");
+  }
+
+  if (product.imagePublicId) {
+    await destroyImage(product.imagePublicId);
   }
 
   await product.destroy();
