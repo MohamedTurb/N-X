@@ -32,7 +32,9 @@ export type Product = {
 let productCache: Product[] | null = null;
 let productCachePromise: Promise<Product[]> | null = null;
 
-type ProductsResponse = Product[] | { data: BackendProduct[]; pagination?: { page: number; limit: number; total: number; totalPages: number } };
+type BackendProductsResponse =
+  | BackendProduct[]
+  | { data: BackendProduct[]; pagination?: { page: number; limit: number; total: number; totalPages: number } };
 
 export type ProductsPage = {
   items: Product[];
@@ -107,7 +109,7 @@ export async function getProducts(forceRefresh = false) {
     return productCachePromise;
   }
 
-  productCachePromise = requestJson<ProductsResponse>("/products").then((payload) => {
+  productCachePromise = requestJson<BackendProductsResponse>("/products").then((payload) => {
     const items = Array.isArray(payload) ? payload : payload.data;
     productCache = items.map(mapProduct);
     return productCache;
@@ -138,7 +140,7 @@ export async function getProductsPage(options: GetProductsPageOptions = {}) {
   }
 
   const query = searchParams.toString();
-  const payload = await requestJson<ProductsResponse>(query ? `/products?${query}` : "/products");
+  const payload = await requestJson<BackendProductsResponse>(query ? `/products?${query}` : "/products");
 
   if (Array.isArray(payload)) {
     const items = payload.map(mapProduct);

@@ -103,6 +103,7 @@ CLOUDINARY_FOLDER=nox/products
 - Keep `sequelize.sync()` out of production and apply migrations instead.
 - Add `helmet`, `compression`, `rate-limit`, `cookie-parser`, and strict CORS.
 - Set `app.set("trust proxy", 1)` on Render.
+- See [backend/README_RENDER.md](../backend/README_RENDER.md) for the Render-specific env vars and deploy checklist.
 
 ## Cloudinary image flow
 
