@@ -1,7 +1,12 @@
-const requiredEnvVars = ["DB_NAME", "DB_USER", "DB_PASSWORD", "DB_HOST", "JWT_SECRET"];
-
 function assertEnv() {
-  const missing = requiredEnvVars.filter((name) => !process.env[name]);
+  const required = ["JWT_SECRET"];
+
+  // If DATABASE_URL isn't provided, require explicit DB parts for local or Render setups
+  if (!process.env.DATABASE_URL) {
+    required.push("DB_NAME", "DB_USER", "DB_PASSWORD", "DB_HOST");
+  }
+
+  const missing = required.filter((name) => !process.env[name]);
 
   if (missing.length > 0) {
     throw new Error(`Missing required environment variables: ${missing.join(", ")}`);

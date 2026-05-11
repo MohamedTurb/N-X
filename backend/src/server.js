@@ -9,7 +9,26 @@ const startServer = async () => {
   try {
     assertEnv();
 
-    await sequelize.authenticate();
+    // Try to authenticate to the database with a small retry/backoff loop.
+    const maxAttempts = Number(process.env.DB_CONN_RETRIES || 5);
+    const retryDelayMs = Number(process.env.DB_CONN_RETRY_DELAY_MS || 5000);
+
+    let attempt = 0;
+    while (true) {
+      try {
+        attempt += 1;
+        await sequelize.authenticate();
+        break;
+      } catch (err) {
+        console.error(`Database connection attempt ${attempt} failed:`, err && err.message ? err.message : err);
+        if (attempt >= maxAttempts) {
+          throw err;
+        }
+        console.log(`Retrying DB connection in ${retryDelayMs}ms...`);
+        // eslint-disable-next-line no-await-in-loop
+        await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
+      }
+    }
 
     if (!isProduction) {
       await sequelize.sync({ alter: false });
