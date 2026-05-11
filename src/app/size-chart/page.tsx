@@ -8,11 +8,11 @@ type SizeRow = {
 };
 
 const sizes: SizeRow[] = [
-  { size: "XS", width: "52", length: "67" },
-  { size: "S", width: "55", length: "69" },
-  { size: "M", width: "58", length: "71" },
-  { size: "L", width: "61", length: "73" },
-  { size: "XL", width: "64", length: "75" },
+  { size: "M", width: "56", length: "73" },
+  { size: "L", width: "59", length: "75" },
+  { size: "XL", width: "62", length: "78" },
+  { size: "2XL", width: "65", length: "80" },
+
 ];
 
 function SizeTable({ rows }: { rows: SizeRow[] }) {
