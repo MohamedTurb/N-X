@@ -157,7 +157,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       totalPrice,
       isLoading: authStatus === "loading" || syncStatus === "loading",
     };
-  }, [authStatus, items, refreshCart, showToast, syncStatus, token]);
+  }, [authStatus, items, refreshCart, showToast, syncStatus, token, logout]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

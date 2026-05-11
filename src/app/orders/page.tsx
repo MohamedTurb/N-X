@@ -54,7 +54,7 @@ function OrdersContent() {
     return () => {
       active = false;
     };
-  }, [showToast, token]);
+  }, [showToast, token, logout]);
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 md:py-20">

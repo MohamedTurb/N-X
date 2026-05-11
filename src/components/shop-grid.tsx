@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { Product } from "../services/product-api";
 import { getErrorMessage } from "../services/api";
 import { useCart } from "./cart-provider";
@@ -17,6 +18,7 @@ export function ShopGrid({ products }: ShopGridProps) {
   const [filter, setFilter] = useState<string>("All");
   const { addItem } = useCart();
   const { isAuthenticated } = useAuth();
+  const router = useRouter();
   const { showToast } = useToast();
 
   const shopProducts = useMemo(() => {
@@ -34,7 +36,7 @@ export function ShopGrid({ products }: ShopGridProps) {
 
   const handleAdd = (product: Product) => {
     if (!isAuthenticated) {
-      window.location.href = "/login?next=/shop";
+      router.push("/login?next=/shop");
       return;
     }
 

@@ -25,7 +25,6 @@ const startServer = async () => {
           throw err;
         }
         console.log(`Retrying DB connection in ${retryDelayMs}ms...`);
-        // eslint-disable-next-line no-await-in-loop
         await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
       }
     }
