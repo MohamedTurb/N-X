@@ -10,7 +10,23 @@ export class ApiError extends Error {
   }
 }
 
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000/api";
+function normalizeApiBaseUrl(raw: string) {
+  try {
+    const parsed = new URL(raw);
+
+    if (parsed.pathname === "/" || parsed.pathname === "") {
+      parsed.pathname = "/api";
+    }
+
+    return parsed.toString().replace(/\/$/, "");
+  } catch {
+    return raw.replace(/\/$/, "");
+  }
+}
+
+export const API_BASE_URL = normalizeApiBaseUrl(
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000/api",
+);
 
 type RequestJsonOptions = {
   method?: string;
