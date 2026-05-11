@@ -6,6 +6,8 @@ import { SiteFooter } from "../../../components/site-footer";
 import { SiteNav } from "../../../components/site-nav";
 import { getProductBySlug } from "../../../lib/products-api";
 
+export const dynamic = "force-dynamic";
+
 const tshirtSizes = [
   { size: "XS", width: "52", length: "67" },
   { size: "S", width: "55", length: "69" },

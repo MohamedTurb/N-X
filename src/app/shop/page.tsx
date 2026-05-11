@@ -3,6 +3,8 @@ import { SiteFooter } from "../../components/site-footer";
 import { SiteNav } from "../../components/site-nav";
 import { getProducts, type Product } from "../../lib/products-api";
 
+export const dynamic = "force-dynamic";
+
 export default async function ShopPage() {
   let shopProducts: Product[] = [];
   try {

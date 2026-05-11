@@ -4,6 +4,8 @@ import { SiteFooter } from "../../components/site-footer";
 import { SiteNav } from "../../components/site-nav";
 import { getProducts } from "../../lib/products-api";
 
+export const dynamic = "force-dynamic";
+
 export default async function DropPage() {
   let products: Awaited<ReturnType<typeof getProducts>> = [];
 
