@@ -21,7 +21,7 @@ export type CartItem = {
   product: Product;
   quantity: number;
   color: "Black" | "White";
-  size: "XS" | "S" | "M" | "L" | "XL";
+  size: string;
 };
 
 export type CartSnapshot = {

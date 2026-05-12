@@ -8,7 +8,7 @@ import { useAuth } from "./auth-provider";
 import { useToast } from "./toast-provider";
 
 export type ProductColor = "Black" | "White";
-export type ProductSize = "XS" | "S" | "M" | "L" | "XL";
+export type ProductSize = string;
 
 type CartContextValue = {
   items: CartItem[];

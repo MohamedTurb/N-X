@@ -8,6 +8,7 @@ import { useCart } from "./cart-provider";
 import { useAuth } from "./auth-provider";
 import { ApiError, getErrorMessage } from "../services/api";
 import { useToast } from "./toast-provider";
+import { getProductSizing } from "../lib/product-sizing";
 
 export function ProductActions({ product }: { product: Product }) {
   const router = useRouter();
@@ -15,7 +16,8 @@ export function ProductActions({ product }: { product: Product }) {
   const { isAuthenticated } = useAuth();
   const { showToast } = useToast();
   const [color, setColor] = useState<ProductColor>("Black");
-  const [size, setSize] = useState<ProductSize>("M");
+  const sizing = getProductSizing(product.categoryKey);
+  const [size, setSize] = useState<ProductSize>(sizing.defaultSize);
   const [isBusy, setIsBusy] = useState(false);
 
   const handleAdd = async () => {
@@ -83,9 +85,11 @@ export function ProductActions({ product }: { product: Product }) {
       </div>
 
       <div>
-        <p className="font-body text-[10px] uppercase tracking-[0.16em] text-zinc-400 sm:text-xs sm:tracking-[0.25em]">Size</p>
+        <p className="font-body text-[10px] uppercase tracking-[0.16em] text-zinc-400 sm:text-xs sm:tracking-[0.25em]">
+          {sizing.selectionLabel}
+        </p>
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          {(["XS", "S", "M", "L", "XL"] as ProductSize[]).map((item) => (
+          {sizing.sizes.map((item) => (
             <button
               key={item}
               onClick={() => setSize(item)}
