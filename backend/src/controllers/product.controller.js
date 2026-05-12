@@ -45,12 +45,15 @@ const uploadImageFromRequest = async (req) => {
 const getProducts = asyncHandler(async (req, res) => {
   const search = typeof req.query.search === "string" ? req.query.search.trim() : "";
   const category = typeof req.query.category === "string" ? req.query.category.trim() : "";
+  const sortBy = typeof req.query.sortBy === "string" ? req.query.sortBy.trim() : "createdAt";
+  const sortDirection = typeof req.query.sortDirection === "string" && req.query.sortDirection.toLowerCase() === "asc" ? "ASC" : "DESC";
   const pageParam = Number.parseInt(String(req.query.page || ""), 10);
   const limitParam = Number.parseInt(String(req.query.limit || ""), 10);
   const shouldPaginate = Number.isInteger(pageParam) || Number.isInteger(limitParam) || Boolean(search) || Boolean(category);
+  const orderBy = [[sortBy === "price" ? "price" : sortBy === "stock" ? "stock" : sortBy === "name" ? "name" : "createdAt", sortDirection]];
 
   if (!shouldPaginate) {
-    const products = await Product.findAll({ order: [["createdAt", "DESC"]] });
+    const products = await Product.findAll({ order: orderBy });
     return res.status(200).json(products);
   }
 
@@ -72,7 +75,7 @@ const getProducts = asyncHandler(async (req, res) => {
 
   const result = await Product.findAndCountAll({
     where,
-    order: [["createdAt", "DESC"]],
+    order: orderBy,
     limit,
     offset: (page - 1) * limit,
   });

@@ -23,15 +23,21 @@ type Props = {
   query: string;
   pagination: Pagination;
   isLoadingProducts: boolean;
+  sortBy: "createdAt" | "price" | "stock" | "name";
+  sortDirection: "asc" | "desc";
+  selectedProductIds: number[];
   newProduct: ProductFormState;
   newProductImageKey: number;
   isCreatingProduct: boolean;
+  isBulkDeleting: boolean;
   editingProductId: number | null;
   editingProduct: ProductFormState;
   editingProductImageKey: number;
   savingProductId: number | null;
   deletingProductId: number | null;
   onQueryChange: (value: string) => void;
+  onSortChange: (sortBy: "createdAt" | "price" | "stock" | "name") => void;
+  onSortDirectionChange: () => void;
   onCreateProduct: () => void;
   onNewProductChange: (next: ProductFormState) => void;
   onNewImageSelect: (event: ChangeEvent<HTMLInputElement>) => void;
@@ -40,6 +46,9 @@ type Props = {
   onStartEditing: (product: Product) => void;
   onSaveProduct: (productId: number) => void;
   onDeleteProduct: (product: Product) => void;
+  onToggleProductSelection: (productId: number) => void;
+  onToggleAllProducts: (checked: boolean) => void;
+  onBulkDelete: () => void;
   onCancelEdit: () => void;
   onPreviousPage: () => void;
   onNextPage: () => void;
@@ -50,15 +59,21 @@ export function AdminProductsSection({
   query,
   pagination,
   isLoadingProducts,
+  sortBy,
+  sortDirection,
+  selectedProductIds,
   newProduct,
   newProductImageKey,
   isCreatingProduct,
+  isBulkDeleting,
   editingProductId,
   editingProduct,
   editingProductImageKey,
   savingProductId,
   deletingProductId,
   onQueryChange,
+  onSortChange,
+  onSortDirectionChange,
   onCreateProduct,
   onNewProductChange,
   onNewImageSelect,
@@ -67,6 +82,9 @@ export function AdminProductsSection({
   onStartEditing,
   onSaveProduct,
   onDeleteProduct,
+  onToggleProductSelection,
+  onToggleAllProducts,
+  onBulkDelete,
   onCancelEdit,
   onPreviousPage,
   onNextPage,
@@ -79,19 +97,50 @@ export function AdminProductsSection({
       </div>
 
       <div className="mt-5 border border-zinc-800 bg-night p-4">
-        <label htmlFor="product-search" className="text-[10px] uppercase tracking-[0.2em] text-zinc-400">
-          Quick Search
-        </label>
-        <input
-          id="product-search"
-          value={query}
-          onChange={(event) => onQueryChange(event.target.value)}
-          placeholder="Search by name or category"
-          className="mt-2 w-full border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500"
-        />
-        <p className="mt-2 text-[10px] uppercase tracking-[0.16em] text-zinc-500">
-          Showing {products.length} / {pagination.total}
-        </p>
+        <div className="grid gap-3">
+          <div>
+            <label htmlFor="product-search" className="text-[10px] uppercase tracking-[0.2em] text-zinc-400">
+              Quick Search
+            </label>
+            <input
+              id="product-search"
+              value={query}
+              onChange={(event) => onQueryChange(event.target.value)}
+              placeholder="Search by name or category"
+              className="mt-2 w-full border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500"
+            />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto]">
+            <select
+              value={sortBy}
+              onChange={(event) => onSortChange(event.target.value as "createdAt" | "price" | "stock" | "name")}
+              className="border border-zinc-700 bg-black px-3 py-2 text-sm uppercase tracking-[0.12em] text-zinc-100"
+            >
+              <option value="createdAt">Newest</option>
+              <option value="name">Name</option>
+              <option value="price">Price</option>
+              <option value="stock">Stock</option>
+            </select>
+            <button
+              type="button"
+              onClick={onSortDirectionChange}
+              className="border border-zinc-700 px-4 py-2 text-[10px] uppercase tracking-[0.18em] text-zinc-200 transition hover:border-white hover:text-white"
+            >
+              {sortDirection === "asc" ? "Ascending" : "Descending"}
+            </button>
+            <button
+              type="button"
+              onClick={onBulkDelete}
+              disabled={selectedProductIds.length === 0 || isBulkDeleting}
+              className="border border-accent px-4 py-2 text-[10px] uppercase tracking-[0.18em] text-accent transition hover:bg-accent hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {isBulkDeleting ? "Deleting..." : `Delete Selected (${selectedProductIds.length})`}
+            </button>
+          </div>
+          <p className="text-[10px] uppercase tracking-[0.16em] text-zinc-500">
+            Showing {products.length} / {pagination.total}
+          </p>
+        </div>
       </div>
 
       <div className="mt-5 border border-zinc-800 bg-night p-5">
@@ -190,12 +239,32 @@ export function AdminProductsSection({
             <p className="text-xs uppercase tracking-[0.2em] text-zinc-400">No products match this search.</p>
           </div>
         ) : (
-          products.map((product) => (
+          <>
+            <div className="flex items-center justify-between border border-zinc-800 bg-night px-4 py-3 text-[10px] uppercase tracking-[0.18em] text-zinc-400">
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={selectedProductIds.length > 0 && selectedProductIds.length === products.length}
+                  onChange={(event) => onToggleAllProducts(event.target.checked)}
+                />
+                Select page
+              </label>
+              <span>{selectedProductIds.length} selected</span>
+            </div>
+            {products.map((product) => (
             <article key={product.id} className="border border-zinc-800 bg-night p-5">
               <div className="flex items-start justify-between gap-4">
-                <div>
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    checked={selectedProductIds.includes(product.id)}
+                    onChange={() => onToggleProductSelection(product.id)}
+                    className="mt-1"
+                  />
+                  <div>
                   <p className="font-display text-2xl tracking-[0.05em]">{product.name}</p>
                   <p className="mt-1 text-xs uppercase tracking-[0.16em] text-zinc-400">{product.category}</p>
+                </div>
                 </div>
                 <span className={`text-xs uppercase tracking-[0.16em] ${product.stockLeft <= 5 ? "text-accent" : "text-zinc-400"}`}>
                   Stock {product.stockLeft}
@@ -296,7 +365,8 @@ export function AdminProductsSection({
                 </div>
               ) : null}
             </article>
-          ))
+          ))}
+          </>
         )}
       </div>
     </aside>

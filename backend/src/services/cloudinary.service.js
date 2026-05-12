@@ -1,7 +1,27 @@
 const cloudinary = require("../config/cloudinary");
+const ApiError = require("../utils/api-error");
+
+const hasCloudinaryConfig = () =>
+  Boolean(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET);
+
+const assertCloudinaryConfigured = () => {
+  if (!hasCloudinaryConfig()) {
+    throw new ApiError(
+      503,
+      "Cloudinary is not configured. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET."
+    );
+  }
+};
 
 const uploadBuffer = (buffer, options = {}) =>
   new Promise((resolve, reject) => {
+    try {
+      assertCloudinaryConfigured();
+    } catch (error) {
+      reject(error);
+      return;
+    }
+
     const stream = cloudinary.uploader.upload_stream(
       {
         folder: process.env.CLOUDINARY_FOLDER || "nox/products",
@@ -24,6 +44,10 @@ const uploadBuffer = (buffer, options = {}) =>
 
 const destroyImage = async (publicId) => {
   if (!publicId) {
+    return null;
+  }
+
+  if (!hasCloudinaryConfig()) {
     return null;
   }
 

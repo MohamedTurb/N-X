@@ -3,6 +3,7 @@ const {
   createOrder,
   getUserOrders,
   getAllOrders,
+  getDashboardSummary,
   updateOrderStatus,
 } = require("../controllers/order.controller");
 const { protect, adminOnly } = require("../middleware/auth.middleware");
@@ -13,6 +14,7 @@ router.use(protect);
 router.post("/", createOrder);
 router.get("/", getUserOrders);
 router.get("/all", adminOnly, getAllOrders);
+router.get("/summary", adminOnly, getDashboardSummary);
 router.put("/:id/status", adminOnly, updateOrderStatus);
 
 module.exports = router;

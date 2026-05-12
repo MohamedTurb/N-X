@@ -79,6 +79,56 @@ export type Order = {
   items: OrderItem[];
 };
 
+export type AdminOrderPage = {
+  data: Order[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+};
+
+export type AdminDashboardSummary = {
+  overview: {
+    revenue: number;
+    revenueLabel: string;
+    averageOrderValue: number;
+    averageOrderValueLabel: string;
+    ordersToday: number;
+    ordersThisWeek: number;
+    pendingOrders: number;
+    cancellationRate: number;
+    lowStockItems: number;
+    totalOrders: number;
+    totalProducts: number;
+  };
+  charts: {
+    dailySales: Array<{ label: string; total: number }>;
+    monthlySales: Array<{ label: string; total: number }>;
+    orderStatuses: Array<{ status: Order["status"]; count: number }>;
+    topProducts: Array<{
+      id: number;
+      name: string;
+      imageUrl: string;
+      quantity: number;
+      revenue: number;
+      revenueLabel: string;
+      stockLeft: number;
+      category: string;
+    }>;
+  };
+  customers: Array<{
+    id: number;
+    username: string;
+    email: string;
+    orderCount: number;
+    totalSpent: number;
+    totalSpentLabel: string;
+    lastActivityAt: string;
+  }>;
+};
+
 function formatCurrency(value: number) {
   return `EGP ${value.toLocaleString("en-US", {
     minimumFractionDigits: Number.isInteger(value) ? 0 : 2,
@@ -128,6 +178,38 @@ export const orderApi = {
     normalizeOrder(await requestJson<BackendOrder>("/orders", { method: "POST", token, body: payload })),
   getMyOrders: async (token: string) => (await requestJson<BackendOrder[]>("/orders", { token })).map(normalizeOrder),
   getAllOrders: async (token: string) => (await requestJson<BackendOrder[]>("/orders/all", { token })).map(normalizeOrder),
+  getAdminOrdersPage: async (token: string, options: { page?: number; limit?: number; status?: Order["status"] | "all"; search?: string } = {}) => {
+    const searchParams = new URLSearchParams();
+
+    if (options.page) searchParams.set("page", String(options.page));
+    if (options.limit) searchParams.set("limit", String(options.limit));
+    if (options.status && options.status !== "all") searchParams.set("status", options.status);
+    if (options.search) searchParams.set("search", options.search);
+
+    const query = searchParams.toString();
+    const payload = await requestJson<BackendOrder[] | { data: BackendOrder[]; pagination: AdminOrderPage["pagination"] }>(
+      query ? `/orders/all?${query}` : "/orders/all",
+      { token }
+    );
+
+    if (Array.isArray(payload)) {
+      return {
+        data: payload.map(normalizeOrder),
+        pagination: {
+          page: 1,
+          limit: payload.length || options.limit || 10,
+          total: payload.length,
+          totalPages: 1,
+        },
+      } satisfies AdminOrderPage;
+    }
+
+    return {
+      data: payload.data.map(normalizeOrder),
+      pagination: payload.pagination,
+    } satisfies AdminOrderPage;
+  },
+  getDashboardSummary: async (token: string) => requestJson<AdminDashboardSummary>("/orders/summary", { token }),
   updateOrderStatus: async (token: string, id: number, status: BackendOrder["status"]) =>
     normalizeOrder(await requestJson<BackendOrder>(`/orders/${id}/status`, { method: "PUT", token, body: { status } })),
 };

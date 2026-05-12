@@ -8,9 +8,20 @@ type Props = {
   orderStatusDrafts: Record<number, OrderStatus>;
   updatingOrderId: number | null;
   filteredOrderCount: number;
+  isLoading: boolean;
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  search: string;
   onFilterChange: (status: "all" | OrderStatus) => void;
+  onSearchChange: (value: string) => void;
   onStatusDraftChange: (orderId: number, status: OrderStatus) => void;
   onStatusSave: (orderId: number) => void;
+  onPreviousPage: () => void;
+  onNextPage: () => void;
 };
 
 const ORDER_STATUSES: OrderStatus[] = ["pending", "paid", "shipped", "delivered"];
@@ -26,6 +37,9 @@ export function AdminOrdersSection({
   updatingOrderId,
   filteredOrderCount,
   onFilterChange,
+  onSearchChange,
+  onPreviousPage,
+  onNextPage,
   onStatusDraftChange,
   onStatusSave,
 }: Props) {
@@ -62,15 +76,52 @@ export function AdminOrdersSection({
             </div>
           </div>
         </div>
-        <span className="text-[10px] uppercase tracking-[0.18em] text-zinc-500 sm:ml-auto sm:text-right">
-          Showing {filteredOrderCount} / {orders.length}
+        <div className="min-w-[240px] sm:ml-auto">
+          <label htmlFor="order-search" className="text-[10px] uppercase tracking-[0.2em] text-zinc-400">
+            Search Orders
+          </label>
+          <input
+            id="order-search"
+            value={search}
+            onChange={(event) => onSearchChange(event.target.value)}
+            placeholder="Name, email, phone, address"
+            className="mt-2 w-full border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500"
+          />
+        </div>
+      </div>
+
+      <div className="mt-4 flex items-center justify-between gap-3 border border-zinc-800 bg-night px-4 py-3 text-[10px] uppercase tracking-[0.18em] text-zinc-400">
+        <button
+          type="button"
+          onClick={onPreviousPage}
+          disabled={pagination.page <= 1 || isLoading}
+          className="transition hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Previous
+        </button>
+        <span>
+          Showing {filteredOrderCount} / {pagination.total} | Page {pagination.page} / {pagination.totalPages}
         </span>
+        <button
+          type="button"
+          onClick={onNextPage}
+          disabled={pagination.page >= pagination.totalPages || isLoading}
+          className="transition hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Next
+        </button>
       </div>
 
       <div className="mt-5 space-y-4">
-        {orders.length === 0 ? (
+        {isLoading ? (
           <div className="border border-zinc-800 p-6 text-center">
-            <p className="text-xs uppercase tracking-[0.2em] text-zinc-400">No orders found.</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-zinc-400">Loading orders...</p>
+          </div>
+        ) : orders.length === 0 ? (
+          <div className="border border-zinc-800 p-6 text-center">
+            <p className="text-xs uppercase tracking-[0.2em] text-zinc-400">
+              {search ? "No orders match this search." : "No orders found."}
+            </p>
           </div>
         ) : null}
 

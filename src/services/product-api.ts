@@ -51,6 +51,8 @@ export type GetProductsPageOptions = {
   category?: string;
   page?: number;
   limit?: number;
+  sortBy?: "createdAt" | "price" | "stock" | "name";
+  sortDirection?: "asc" | "desc";
 };
 
 function toSlug(value: string) {
@@ -137,6 +139,14 @@ export async function getProductsPage(options: GetProductsPageOptions = {}) {
 
   if (options.limit) {
     searchParams.set("limit", String(options.limit));
+  }
+
+  if (options.sortBy) {
+    searchParams.set("sortBy", options.sortBy);
+  }
+
+  if (options.sortDirection) {
+    searchParams.set("sortDirection", options.sortDirection);
   }
 
   const query = searchParams.toString();
