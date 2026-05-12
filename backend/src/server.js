@@ -3,7 +3,8 @@ require("dotenv").config();
 const { assertEnv, isProduction, port } = require("./config/env");
 const app = require("./app");
 const sequelize = require("./config/database");
-require("./models");
+const { User } = require("./models");
+const { seedDatabase } = require("./seeders/seed");
 
 const startServer = async () => {
   try {
@@ -35,6 +36,15 @@ const startServer = async () => {
       await sequelize.sync({ alter: false, force: syncForce });
       if (isProduction && syncOnStart) {
         console.log("Database schema sync completed on startup (DB_SYNC_ON_START=true).");
+      }
+    }
+
+    const shouldBootstrapSeed = process.env.DB_BOOTSTRAP_SEED_ON_START !== "false";
+    if (shouldBootstrapSeed) {
+      const userCount = await User.count();
+      if (userCount === 0) {
+        await seedDatabase({ resetSchema: false });
+        console.log("Seeded initial admin/customer accounts and products on startup.");
       }
     }
 

@@ -25,6 +25,7 @@ Optional tuning env vars (defaults are safe):
 - `DB_CONN_RETRY_DELAY_MS` (default 5000)
 - `DB_SYNC_ON_START` (default `true` in production) — set `false` only if you are managing schema elsewhere
 - `DB_SYNC_FORCE` (default `false`) — dangerous, drops/recreates tables when `true`
+- `DB_BOOTSTRAP_SEED_ON_START` (default `true`) — seeds initial login accounts and products when the database is empty
 
 ## Minimal deploy checklist
 1. Connect GitHub repo to Render and add a Web Service with root directory `backend`.
@@ -46,3 +47,4 @@ npm run start:dev
 ## Notes
 - The server retries DB authentication on startup by default; tune `DB_CONN_RETRIES` / `DB_CONN_RETRY_DELAY_MS` as needed.
 - Prefer `DATABASE_URL` for managed Postgres (Supabase/Render DB). If using individual `DB_*` vars, ensure `DB_HOST` is reachable from Render.
+- The first seeded admin login is `admin@nox.com` / `Admin@123`.

@@ -2,10 +2,19 @@ require("dotenv").config();
 const bcrypt = require("bcryptjs");
 const { sequelize, User, Product, Cart } = require("../models");
 
-const seed = async () => {
+const seedDatabase = async ({ resetSchema = true } = {}) => {
   try {
     await sequelize.authenticate();
-    await sequelize.sync({ force: true });
+
+    if (resetSchema) {
+      await sequelize.sync({ force: true });
+    }
+
+    const existingUsers = await User.count();
+    if (!resetSchema && existingUsers > 0) {
+      console.log("Seed skipped: database already contains users.");
+      return;
+    }
 
     const adminPassword = await bcrypt.hash("Admin@123", 10);
     const customerPassword = await bcrypt.hash("Customer@123", 10);
@@ -65,11 +74,18 @@ const seed = async () => {
     console.log("Seed completed successfully");
     console.log("Admin login: admin@nox.com / Admin@123");
     console.log("Customer login: customer@nox.com / Customer@123");
-    process.exit(0);
   } catch (error) {
     console.error("Seed failed:", error);
-    process.exit(1);
+    throw error;
   }
 };
 
-seed();
+if (require.main === module) {
+  seedDatabase({ resetSchema: true })
+    .then(() => process.exit(0))
+    .catch(() => process.exit(1));
+}
+
+module.exports = {
+  seedDatabase,
+};
