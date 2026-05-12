@@ -23,6 +23,8 @@ Optional tuning env vars (defaults are safe):
 - `DB_POOL_MAX` (default 10)
 - `DB_CONN_RETRIES` (default 5) — how many times to retry DB connect on startup
 - `DB_CONN_RETRY_DELAY_MS` (default 5000)
+- `DB_SYNC_ON_START` (default `false`) — set `true` once on fresh databases to create tables automatically
+- `DB_SYNC_FORCE` (default `false`) — dangerous, drops/recreates tables when `true`
 
 ## Minimal deploy checklist
 1. Connect GitHub repo to Render and add a Web Service with root directory `backend`.

@@ -8,6 +8,8 @@ require("./models");
 const startServer = async () => {
   try {
     assertEnv();
+    const syncOnStart = process.env.DB_SYNC_ON_START === "true";
+    const syncForce = process.env.DB_SYNC_FORCE === "true";
 
     // Try to authenticate to the database with a small retry/backoff loop.
     const maxAttempts = Number(process.env.DB_CONN_RETRIES || 5);
@@ -29,8 +31,11 @@ const startServer = async () => {
       }
     }
 
-    if (!isProduction) {
-      await sequelize.sync({ alter: false });
+    if (!isProduction || syncOnStart) {
+      await sequelize.sync({ alter: false, force: syncForce });
+      if (syncOnStart && isProduction) {
+        console.log("Database schema sync completed on startup (DB_SYNC_ON_START=true).");
+      }
     }
 
     app.listen(port, () => {
