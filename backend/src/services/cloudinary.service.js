@@ -31,13 +31,19 @@ const uploadBuffer = (buffer, options = {}) =>
       },
       (error, result) => {
         if (error) {
-          reject(error);
+          const message = error.message || "Upload failed to Cloudinary";
+          reject(new ApiError(400, `Image upload error: ${message}`));
           return;
         }
 
         resolve(result);
       }
     );
+
+    stream.on("error", (error) => {
+      const message = error.message || "Upload stream error";
+      reject(new ApiError(400, `Image upload stream error: ${message}`));
+    });
 
     stream.end(buffer);
   });
