@@ -1,14 +1,19 @@
 const cloudinary = require("../config/cloudinary");
 const ApiError = require("../utils/api-error");
 
-const hasCloudinaryConfig = () =>
-  Boolean(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET);
+const REQUIRED_CLOUDINARY_VARS = ["CLOUDINARY_CLOUD_NAME", "CLOUDINARY_API_KEY", "CLOUDINARY_API_SECRET"];
+
+const getMissingCloudinaryVars = () =>
+  REQUIRED_CLOUDINARY_VARS.filter((key) => !process.env[key] || String(process.env[key]).trim().length === 0);
+
+const hasCloudinaryConfig = () => getMissingCloudinaryVars().length === 0;
 
 const assertCloudinaryConfigured = () => {
   if (!hasCloudinaryConfig()) {
+    const missing = getMissingCloudinaryVars();
     throw new ApiError(
       503,
-      "Cloudinary is not configured. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET."
+      `Cloudinary is not configured. Missing: ${missing.join(", ")}. Set these in Render environment variables.`
     );
   }
 };
@@ -80,4 +85,5 @@ module.exports = {
   uploadBuffer,
   destroyImage,
   buildResponsiveVariants,
+  hasCloudinaryConfig,
 };

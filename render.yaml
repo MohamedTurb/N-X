@@ -43,3 +43,9 @@ services:
         value: 8
       - key: CORS_ALLOW_VERCEL_PREVIEWS
         value: true
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false

@@ -8,6 +8,7 @@ const rateLimit = require("express-rate-limit");
 const routes = require("./routes");
 const { notFoundHandler, errorHandler } = require("./middleware/error.middleware");
 const { corsOptions } = require("./config/cors");
+const { hasCloudinaryConfig } = require("./services/cloudinary.service");
 
 const app = express();
 
@@ -40,6 +41,7 @@ app.get("/health", (_req, res) => {
   res.status(200).json({
     message: "NOX API is running",
     environment: process.env.NODE_ENV || "development",
+    uploadsReady: hasCloudinaryConfig(),
   });
 });
 
