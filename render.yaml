@@ -41,3 +41,5 @@ services:
         value: 180
       - key: MAX_UPLOAD_SIZE_MB
         value: 8
+      - key: CORS_ALLOW_VERCEL_PREVIEWS
+        value: true

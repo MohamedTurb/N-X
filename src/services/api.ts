@@ -43,6 +43,10 @@ function joinPath(path: string) {
 }
 
 function toMessage(payload: unknown, status: number) {
+  if (typeof payload === "string" && payload.trim()) {
+    return payload;
+  }
+
   if (payload && typeof payload === "object") {
     if ("message" in payload && typeof (payload as { message?: unknown }).message === "string") {
       return (payload as { message: string }).message;
