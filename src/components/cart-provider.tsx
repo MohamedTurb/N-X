@@ -6,8 +6,7 @@ import { ApiError, getErrorMessage } from "../services/api";
 import { cartApi, type CartItem } from "../services/cart-api";
 import { useAuth } from "./auth-provider";
 import { useToast } from "./toast-provider";
-
-export type ProductColor = "Black" | "White";
+import { DEFAULT_PRODUCT_COLOR, type ProductColor } from "../lib/product-colors";
 export type ProductSize = string;
 
 type CartContextValue = {
@@ -63,7 +62,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const addItem = async (
       product: Product,
       quantity = 1,
-      color: ProductColor = "Black",
+      color: ProductColor = DEFAULT_PRODUCT_COLOR,
       _size: ProductSize = "M"
     ) => {
       if (!token) {
@@ -117,7 +116,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (quantity <= 0) {
-        await removeItem(slug, "Black", "M");
+        await removeItem(slug, _color, _size);
         return;
       }
 

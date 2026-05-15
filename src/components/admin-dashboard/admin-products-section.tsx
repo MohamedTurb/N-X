@@ -9,6 +9,8 @@ type ProductFormState = {
   category: string;
   imageUrl: string;
   imagePublicId: string;
+  featured: boolean;
+  variantsText: string;
 };
 
 type Pagination = {
@@ -25,6 +27,7 @@ type Props = {
   isLoadingProducts: boolean;
   sortBy: "createdAt" | "price" | "stock" | "name";
   sortDirection: "asc" | "desc";
+  stockFilter: "all" | "low" | "out" | "reorder" | "featured";
   selectedProductIds: number[];
   newProduct: ProductFormState;
   newProductImageKey: number;
@@ -38,6 +41,7 @@ type Props = {
   onQueryChange: (value: string) => void;
   onSortChange: (sortBy: "createdAt" | "price" | "stock" | "name") => void;
   onSortDirectionChange: () => void;
+  onStockFilterChange: (filter: "all" | "low" | "out" | "reorder" | "featured") => void;
   onCreateProduct: () => void;
   onNewProductChange: (next: ProductFormState) => void;
   onNewImageSelect: (event: ChangeEvent<HTMLInputElement>) => void;
@@ -89,6 +93,22 @@ export function AdminProductsSection({
   onPreviousPage,
   onNextPage,
 }: Props) {
+  const getStockTag = (stockLeft: number) => {
+    if (stockLeft <= 0) {
+      return { label: "Out of stock", tone: "text-red-300 border-red-500/40" };
+    }
+
+    if (stockLeft <= 5) {
+      return { label: "Reorder needed", tone: "text-amber-300 border-amber-500/40" };
+    }
+
+    if (stockLeft <= 10) {
+      return { label: "Low stock", tone: "text-orange-300 border-orange-500/40" };
+    }
+
+    return { label: "In stock", tone: "text-emerald-300 border-emerald-500/40" };
+  };
+
   return (
     <aside>
       <div className="flex items-end justify-between gap-4">
@@ -137,6 +157,22 @@ export function AdminProductsSection({
               {isBulkDeleting ? "Deleting..." : `Delete Selected (${selectedProductIds.length})`}
             </button>
           </div>
+          <div className="flex flex-wrap gap-2">
+            {(["all", "out", "reorder", "low", "featured"] as const).map((filter) => (
+              <button
+                key={filter}
+                type="button"
+                onClick={() => onStockFilterChange(filter)}
+                className={`border px-3 py-1.5 text-[10px] uppercase tracking-[0.16em] transition ${
+                  stockFilter === filter
+                    ? "border-white bg-white text-black"
+                    : "border-zinc-700 text-zinc-300 hover:border-white hover:text-white"
+                }`}
+              >
+                {filter === "all" ? "All" : filter.replace(/\b\w/g, (char) => char.toUpperCase())}
+              </button>
+            ))}
+          </div>
           <p className="text-[10px] uppercase tracking-[0.16em] text-zinc-500">
             Showing {products.length} / {pagination.total}
           </p>
@@ -179,6 +215,27 @@ export function AdminProductsSection({
             placeholder="Category key (e.g. tops)"
             className="border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500"
           />
+          <div className="grid gap-2 rounded border border-zinc-800 bg-black/30 p-3">
+            <label className="text-[10px] uppercase tracking-[0.2em] text-zinc-400">Variants JSON</label>
+            <textarea
+              value={newProduct.variantsText}
+              onChange={(event) => onNewProductChange({ ...newProduct, variantsText: event.target.value })}
+              placeholder='[{"sku":"TSH-001","color":"Black","size":"M","stock":12}]'
+              rows={4}
+              className="border border-zinc-700 bg-black px-3 py-2 font-mono text-xs text-zinc-100 placeholder:text-zinc-500"
+            />
+            <p className="text-[10px] uppercase tracking-[0.16em] text-zinc-500">
+              Optional structured variants for colors, sizes, SKU, and stock per variant.
+            </p>
+          </div>
+          <label className="flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-zinc-400">
+            <input
+              type="checkbox"
+              checked={newProduct.featured}
+              onChange={(event) => onNewProductChange({ ...newProduct, featured: event.target.checked })}
+            />
+            Featured product
+          </label>
           <div className="grid gap-2 rounded border border-zinc-800 bg-black/30 p-3">
             <label className="text-[10px] uppercase tracking-[0.2em] text-zinc-400">Choose Image From Device</label>
             <input
@@ -264,9 +321,16 @@ export function AdminProductsSection({
                   <div>
                   <p className="font-display text-2xl tracking-[0.05em]">{product.name}</p>
                   <p className="mt-1 text-xs uppercase tracking-[0.16em] text-zinc-400">{product.category}</p>
+                  <div className="mt-2 flex flex-wrap gap-2 text-[10px] uppercase tracking-[0.16em]">
+                    <span className={`border px-2 py-1 ${getStockTag(product.stockLeft).tone}`}>{getStockTag(product.stockLeft).label}</span>
+                    {product.featured ? <span className="border border-fuchsia-500/40 px-2 py-1 text-fuchsia-300">Featured</span> : null}
+                    {product.variants?.length ? (
+                      <span className="border border-zinc-700 px-2 py-1 text-zinc-300">{product.variants.length} variants</span>
+                    ) : null}
+                  </div>
                 </div>
                 </div>
-                <span className={`text-xs uppercase tracking-[0.16em] ${product.stockLeft <= 5 ? "text-accent" : "text-zinc-400"}`}>
+                <span className={`text-xs uppercase tracking-[0.16em] ${product.stockLeft <= 0 ? "text-red-300" : product.stockLeft <= 5 ? "text-accent" : "text-zinc-400"}`}>
                   Stock {product.stockLeft}
                 </span>
               </div>
@@ -325,6 +389,23 @@ export function AdminProductsSection({
                     placeholder="Category key"
                     className="border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500"
                   />
+                  <div className="grid gap-2 rounded border border-zinc-800 bg-black/30 p-3">
+                    <label className="text-[10px] uppercase tracking-[0.2em] text-zinc-400">Variants JSON</label>
+                    <textarea
+                      value={editingProduct.variantsText}
+                      onChange={(event) => onEditProductChange({ ...editingProduct, variantsText: event.target.value })}
+                      rows={4}
+                      className="border border-zinc-700 bg-black px-3 py-2 font-mono text-xs text-zinc-100 placeholder:text-zinc-500"
+                    />
+                  </div>
+                  <label className="flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-zinc-400">
+                    <input
+                      type="checkbox"
+                      checked={editingProduct.featured}
+                      onChange={(event) => onEditProductChange({ ...editingProduct, featured: event.target.checked })}
+                    />
+                    Featured product
+                  </label>
                   <div className="grid gap-2 rounded border border-zinc-800 bg-black/30 p-3">
                     <label className="text-[10px] uppercase tracking-[0.2em] text-zinc-400">Choose Image From Device</label>
                     <input

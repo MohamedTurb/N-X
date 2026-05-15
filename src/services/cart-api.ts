@@ -1,13 +1,14 @@
 import { requestJson } from "./api";
 import type { BackendProduct, Product } from "./product-api";
 import { mapProduct } from "./product-api";
+import { DEFAULT_PRODUCT_COLOR, type ProductColor } from "../lib/product-colors";
 
 export type BackendCartItem = {
   id: number;
   cartId: number;
   productId: number;
   quantity: number;
-  color?: "Black" | "White";
+  color?: ProductColor;
   product: BackendProduct;
 };
 
@@ -20,7 +21,7 @@ export type BackendCart = {
 export type CartItem = {
   product: Product;
   quantity: number;
-  color: "Black" | "White";
+  color: ProductColor;
   size: string;
 };
 
@@ -36,7 +37,7 @@ function normalizeItem(item: BackendCartItem): CartItem {
   return {
     product: mapProduct(item.product),
     quantity: item.quantity,
-    color: item.color ?? "Black",
+    color: item.color ?? DEFAULT_PRODUCT_COLOR,
     size: "M",
   };
 }
@@ -57,17 +58,17 @@ function toSnapshot(cart: BackendCart | null | undefined): CartSnapshot {
 
 export const cartApi = {
   getCart: async (token: string) => toSnapshot(await requestJson<BackendCart>("/cart", { token })),
-  addItem: async (token: string, productId: number, quantity = 1, color: "Black" | "White" = "Black") =>
+  addItem: async (token: string, productId: number, quantity = 1, color: ProductColor = DEFAULT_PRODUCT_COLOR) =>
     toSnapshot(await requestJson<BackendCart>("/cart/add", { method: "POST", token, body: { productId, quantity, color } })),
-  updateItem: async (token: string, productId: number, quantity: number, color: "Black" | "White" = "Black") =>
+  updateItem: async (token: string, productId: number, quantity: number, color: ProductColor = DEFAULT_PRODUCT_COLOR) =>
     toSnapshot(
       await requestJson<BackendCart>("/cart/update", { method: "PUT", token, body: { productId, quantity, color } })
     ),
-  removeItem: async (token: string, productId: number, color: "Black" | "White" = "Black") =>
+  removeItem: async (token: string, productId: number, color: ProductColor = DEFAULT_PRODUCT_COLOR) =>
     toSnapshot(await requestJson<BackendCart>("/cart/remove", { method: "DELETE", token, body: { productId, color } })),
   clearCart: async (token: string) => {
     const cart = await requestJson<BackendCart>("/cart", { token });
-    const itemsToRemove = (cart.items ?? []).map((item) => ({ productId: item.productId, color: item.color ?? "Black" }));
+    const itemsToRemove = (cart.items ?? []).map((item) => ({ productId: item.productId, color: item.color ?? DEFAULT_PRODUCT_COLOR }));
 
     for (const item of itemsToRemove) {
       await requestJson<BackendCart>("/cart/remove", {

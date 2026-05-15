@@ -6,7 +6,9 @@ type Props = {
   orders: Order[];
   orderFilter: "all" | OrderStatus;
   orderStatusDrafts: Record<number, OrderStatus>;
+  orderShippingDrafts: Record<number, { trackingNumber: string; shipmentStatus: "pending" | "packed" | "shipped" | "delivered" }>;
   updatingOrderId: number | null;
+  updatingShippingOrderId: number | null;
   filteredOrderCount: number;
   isLoading: boolean;
   pagination: {
@@ -20,11 +22,14 @@ type Props = {
   onSearchChange: (value: string) => void;
   onStatusDraftChange: (orderId: number, status: OrderStatus) => void;
   onStatusSave: (orderId: number) => void;
+  onShippingDraftChange: (orderId: number, next: { trackingNumber: string; shipmentStatus: "pending" | "packed" | "shipped" | "delivered" }) => void;
+  onShippingSave: (orderId: number) => void;
   onPreviousPage: () => void;
   onNextPage: () => void;
 };
 
-const ORDER_STATUSES: OrderStatus[] = ["pending", "paid", "shipped", "delivered"];
+const ORDER_STATUSES: OrderStatus[] = ["pending", "paid", "shipped", "delivered", "canceled", "refunded"];
+const SHIPMENT_STATUSES = ["pending", "packed", "shipped", "delivered"] as const;
 
 function formatCurrency(value: number) {
   return `EGP ${value.toLocaleString("en-US")}`;
@@ -34,7 +39,9 @@ export function AdminOrdersSection({
   orders,
   orderFilter,
   orderStatusDrafts,
+  orderShippingDrafts,
   updatingOrderId,
+  updatingShippingOrderId,
   filteredOrderCount,
   isLoading,
   pagination,
@@ -45,6 +52,8 @@ export function AdminOrdersSection({
   onNextPage,
   onStatusDraftChange,
   onStatusSave,
+  onShippingDraftChange,
+  onShippingSave,
 }: Props) {
   return (
     <section>
@@ -174,14 +183,75 @@ export function AdminOrdersSection({
                     ))}
                   </select>
                 </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => onStatusSave(order.id)}
+                    disabled={updatingOrderId === order.id || (orderStatusDrafts[order.id] ?? order.status) === order.status}
+                    className="border border-white px-4 py-2 text-[10px] uppercase tracking-[0.18em] transition hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    {updatingOrderId === order.id ? "Updating..." : "Update Status"}
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-4 grid gap-3 border-t border-zinc-900 pt-4 lg:grid-cols-[1fr_auto] lg:items-end">
+                <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+                  <div>
+                    <label htmlFor={`tracking-${order.id}`} className="text-[10px] uppercase tracking-[0.2em] text-zinc-400">
+                      Tracking Number
+                    </label>
+                    <input
+                      id={`tracking-${order.id}`}
+                      value={orderShippingDrafts[order.id]?.trackingNumber ?? order.trackingNumber ?? ""}
+                      onChange={(event) =>
+                        onShippingDraftChange(order.id, {
+                          trackingNumber: event.target.value,
+                          shipmentStatus: orderShippingDrafts[order.id]?.shipmentStatus ?? order.shipmentStatus ?? "pending",
+                        })
+                      }
+                      placeholder="Enter tracking number"
+                      className="mt-2 w-full border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor={`shipment-${order.id}`} className="text-[10px] uppercase tracking-[0.2em] text-zinc-400">
+                      Shipment Status
+                    </label>
+                    <select
+                      id={`shipment-${order.id}`}
+                      value={orderShippingDrafts[order.id]?.shipmentStatus ?? order.shipmentStatus ?? "pending"}
+                      onChange={(event) =>
+                        onShippingDraftChange(order.id, {
+                          trackingNumber: orderShippingDrafts[order.id]?.trackingNumber ?? order.trackingNumber ?? "",
+                          shipmentStatus: event.target.value as (typeof SHIPMENT_STATUSES)[number],
+                        })
+                      }
+                      className="mt-2 border border-zinc-700 bg-black px-3 py-2 text-xs uppercase tracking-[0.14em] text-zinc-100"
+                    >
+                      {SHIPMENT_STATUSES.map((status) => (
+                        <option key={status} value={status}>
+                          {status}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
                 <button
                   type="button"
-                  onClick={() => onStatusSave(order.id)}
-                  disabled={updatingOrderId === order.id || (orderStatusDrafts[order.id] ?? order.status) === order.status}
-                  className="border border-white px-4 py-2 text-[10px] uppercase tracking-[0.18em] transition hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-40"
+                  onClick={() => onShippingSave(order.id)}
+                  disabled={updatingShippingOrderId === order.id}
+                  className="border border-zinc-500 px-4 py-2 text-[10px] uppercase tracking-[0.18em] text-zinc-200 transition hover:border-white hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  {updatingOrderId === order.id ? "Updating..." : "Update Status"}
+                  {updatingShippingOrderId === order.id ? "Saving..." : "Save Shipping"}
                 </button>
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-2 text-[10px] uppercase tracking-[0.16em]">
+                <span className="border border-zinc-700 px-2 py-1 text-zinc-300">Shipment: {order.shipmentStatus}</span>
+                {order.trackingNumber ? <span className="border border-zinc-700 px-2 py-1 text-zinc-300">Tracking: {order.trackingNumber}</span> : null}
+                {order.status === "canceled" ? <span className="border border-red-500/40 px-2 py-1 text-red-300">Canceled</span> : null}
+                {order.status === "refunded" ? <span className="border border-amber-500/40 px-2 py-1 text-amber-300">Refunded</span> : null}
               </div>
 
               <div className="mt-5 space-y-3 text-sm">

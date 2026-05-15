@@ -44,6 +44,16 @@ const Product = sequelize.define(
       allowNull: false,
       defaultValue: [],
     },
+    variants: {
+      type: DataTypes.JSONB,
+      allowNull: false,
+      defaultValue: [],
+    },
+    featured: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
   },
   {
     tableName: "products",

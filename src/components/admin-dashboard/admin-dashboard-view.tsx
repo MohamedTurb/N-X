@@ -34,6 +34,16 @@ type ProductFormState = {
   category: string;
   imageUrl: string;
   imagePublicId: string;
+  featured: boolean;
+  variantsText: string;
+};
+
+type StockFilter = "all" | "low" | "out" | "reorder" | "featured";
+type ShipmentStatus = "pending" | "packed" | "shipped" | "delivered";
+
+type ShippingDraft = {
+  trackingNumber: string;
+  shipmentStatus: ShipmentStatus;
 };
 
 const EMPTY_PRODUCT_FORM: ProductFormState = {
@@ -44,7 +54,45 @@ const EMPTY_PRODUCT_FORM: ProductFormState = {
   category: "",
   imageUrl: "",
   imagePublicId: "",
+  featured: false,
+  variantsText: "[]",
 };
+
+function getStockState(stockLeft: number) {
+  if (stockLeft <= 0) {
+    return "out";
+  }
+
+  if (stockLeft <= 5) {
+    return "reorder";
+  }
+
+  if (stockLeft <= 10) {
+    return "low";
+  }
+
+  return "all";
+}
+
+function parseVariantsText(variantsText: string) {
+  const trimmed = variantsText.trim();
+
+  if (!trimmed) {
+    return [];
+  }
+
+  const parsed = JSON.parse(trimmed);
+
+  if (!Array.isArray(parsed)) {
+    throw new Error("Variants must be a JSON array");
+  }
+
+  return parsed;
+}
+
+function buildVariantsText(product: Product | null | undefined) {
+  return JSON.stringify(product?.variants ?? [], null, 2);
+}
 
 function toToastMessage(error: unknown) {
   if (error instanceof ApiError) {
@@ -68,7 +116,9 @@ export function AdminDashboardView() {
   const [orderSearch, setOrderSearch] = useState("");
   const [debouncedOrderSearch, setDebouncedOrderSearch] = useState("");
   const [orderStatusDrafts, setOrderStatusDrafts] = useState<Record<number, OrderStatus>>({});
+  const [orderShippingDrafts, setOrderShippingDrafts] = useState<Record<number, ShippingDraft>>({});
   const [updatingOrderId, setUpdatingOrderId] = useState<number | null>(null);
+  const [updatingShippingOrderId, setUpdatingShippingOrderId] = useState<number | null>(null);
   const [isLoadingOrders, setIsLoadingOrders] = useState(true);
 
   const [products, setProducts] = useState<Product[]>([]);
@@ -77,6 +127,7 @@ export function AdminDashboardView() {
   const [debouncedProductQuery, setDebouncedProductQuery] = useState("");
   const [sortBy, setSortBy] = useState<"createdAt" | "price" | "stock" | "name">("createdAt");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [productStockFilter, setProductStockFilter] = useState<StockFilter>("all");
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
   const [selectedProductIds, setSelectedProductIds] = useState<number[]>([]);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
@@ -130,6 +181,16 @@ export function AdminDashboardView() {
         const next = { ...current };
         for (const order of response.data) {
           next[order.id] = order.status;
+        }
+        return next;
+      });
+      setOrderShippingDrafts((current) => {
+        const next = { ...current };
+        for (const order of response.data) {
+          next[order.id] = {
+            trackingNumber: order.trackingNumber ?? "",
+            shipmentStatus: order.shipmentStatus ?? "pending",
+          };
         }
         return next;
       });
@@ -205,6 +266,21 @@ export function AdminDashboardView() {
 
   const statsSummary = useMemo(() => summary?.overview ?? null, [summary]);
 
+  const filteredProducts = useMemo(() => {
+    if (productStockFilter === "all") {
+      return products;
+    }
+
+    if (productStockFilter === "featured") {
+      return products.filter((product) => product.featured);
+    }
+
+    return products.filter((product) => {
+      const state = getStockState(product.stockLeft);
+      return state === productStockFilter;
+    });
+  }, [productStockFilter, products]);
+
   const handleProductImageSelect = async (
     event: ChangeEvent<HTMLInputElement>,
     applyImage: (imageUrl: string, imagePublicId: string) => void
@@ -239,6 +315,10 @@ export function AdminDashboardView() {
 
   const handleOrderStatusDraft = (orderId: number, status: OrderStatus) => {
     setOrderStatusDrafts((current) => ({ ...current, [orderId]: status }));
+  };
+
+  const handleOrderShippingDraft = (orderId: number, next: ShippingDraft) => {
+    setOrderShippingDrafts((current) => ({ ...current, [orderId]: next }));
   };
 
   const handleOrderStatusSave = async (orderId: number) => {
@@ -280,6 +360,71 @@ export function AdminDashboardView() {
     }
   };
 
+  const handleOrderShippingSave = async (orderId: number) => {
+    if (!token) {
+      return;
+    }
+
+    const draft = orderShippingDrafts[orderId];
+    const currentOrder = orders.find((order) => order.id === orderId);
+
+    if (!draft || !currentOrder) {
+      return;
+    }
+
+    const snapshot = orders;
+
+    try {
+      setUpdatingShippingOrderId(orderId);
+      setOrders((current) =>
+        current.map((order) =>
+          order.id === orderId
+            ? {
+                ...order,
+                trackingNumber: draft.trackingNumber || null,
+                shipmentStatus: draft.shipmentStatus,
+              }
+            : order
+        )
+      );
+
+      const updated = await orderApi.updateOrderShipping(token, orderId, {
+        trackingNumber: draft.trackingNumber || null,
+        shipmentStatus: draft.shipmentStatus,
+      });
+      setOrders((current) =>
+        current.map((order) =>
+          order.id === orderId
+            ? {
+                ...order,
+                trackingNumber: updated.trackingNumber,
+                shipmentStatus: updated.shipmentStatus,
+              }
+            : order
+        )
+      );
+      setOrderShippingDrafts((current) => ({
+        ...current,
+        [orderId]: {
+          trackingNumber: updated.trackingNumber ?? "",
+          shipmentStatus: updated.shipmentStatus,
+        },
+      }));
+      showToast(`Shipping updated for order #${orderId}`, "success");
+    } catch (error) {
+      setOrders(snapshot);
+
+      if (error instanceof ApiError && error.status === 401) {
+        logout();
+        return;
+      }
+
+      showToast(toToastMessage(error), "error");
+    } finally {
+      setUpdatingShippingOrderId(null);
+    }
+  };
+
   const handleCreateProduct = async () => {
     if (!token) {
       return;
@@ -298,6 +443,15 @@ export function AdminDashboardView() {
       return;
     }
 
+    let variants;
+
+    try {
+      variants = parseVariantsText(newProduct.variantsText);
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Invalid variants JSON", "error");
+      return;
+    }
+
     try {
       setIsCreatingProduct(true);
       const created = await createProduct(token, {
@@ -308,6 +462,8 @@ export function AdminDashboardView() {
         category: newProduct.category,
         imageUrl: newProduct.imageUrl,
         imagePublicId: newProduct.imagePublicId,
+        featured: newProduct.featured,
+        variants,
       });
       setProducts((current) => [created, ...current].slice(0, productPagination.limit));
       setSelectedProductIds((current) => current.filter((id) => id !== created.id));
@@ -338,6 +494,8 @@ export function AdminDashboardView() {
       category: product.categoryKey,
       imageUrl: product.imageUrl,
       imagePublicId: product.imagePublicId ?? "",
+      featured: product.featured ?? false,
+      variantsText: buildVariantsText(product),
     });
     setEditingProductImageKey((current) => current + 1);
   };
@@ -360,6 +518,15 @@ export function AdminDashboardView() {
       return;
     }
 
+    let variants;
+
+    try {
+      variants = parseVariantsText(editingProduct.variantsText);
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Invalid variants JSON", "error");
+      return;
+    }
+
     const snapshot = products;
 
     try {
@@ -375,6 +542,8 @@ export function AdminDashboardView() {
         categoryKey: editingProduct.category,
         imageUrl: editingProduct.imageUrl,
         imagePublicId: editingProduct.imagePublicId || null,
+        featured: editingProduct.featured,
+        variants,
       } as Product;
 
       setProducts((current) => current.map((product) => (product.id === productId ? optimisticProduct : product)));
@@ -386,6 +555,8 @@ export function AdminDashboardView() {
         category: editingProduct.category,
         imageUrl: editingProduct.imageUrl,
         imagePublicId: editingProduct.imagePublicId,
+        featured: editingProduct.featured,
+        variants,
       });
       setProducts((current) => current.map((product) => (product.id === productId ? updated : product)));
       setEditingProductId(null);
@@ -515,7 +686,7 @@ export function AdminDashboardView() {
   };
 
   const handleToggleAllProducts = (checked: boolean) => {
-    setSelectedProductIds(checked ? products.map((product) => product.id) : []);
+    setSelectedProductIds(checked ? filteredProducts.map((product) => product.id) : []);
   };
 
   return (
@@ -529,14 +700,21 @@ export function AdminDashboardView() {
       ) : null}
 
       <AdminAnalyticsSection summary={summary} isLoading={summaryLoading} />
-      <AdminCustomersSection customers={summary?.customers ?? []} isLoading={summaryLoading} />
+      <AdminCustomersSection
+        customers={summary?.customers ?? []}
+        topCustomers={summary?.topCustomers ?? []}
+        inactiveCustomers={statsSummary?.inactiveCustomers ?? 0}
+        isLoading={summaryLoading}
+      />
 
       <div className="mt-12 grid gap-8 md:grid-cols-[1fr_350px] xl:grid-cols-[1.35fr_0.9fr] md:gap-10">
         <AdminOrdersSection
           orders={orders}
           orderFilter={orderFilter}
           orderStatusDrafts={orderStatusDrafts}
+          orderShippingDrafts={orderShippingDrafts}
           updatingOrderId={updatingOrderId}
+          updatingShippingOrderId={updatingShippingOrderId}
           filteredOrderCount={orders.length}
           isLoading={isLoadingOrders}
           pagination={orderPagination}
@@ -545,17 +723,20 @@ export function AdminDashboardView() {
           onSearchChange={handleOrderSearchChange}
           onStatusDraftChange={handleOrderStatusDraft}
           onStatusSave={(orderId) => void handleOrderStatusSave(orderId)}
+          onShippingDraftChange={handleOrderShippingDraft}
+          onShippingSave={(orderId) => void handleOrderShippingSave(orderId)}
           onPreviousPage={handlePreviousOrderPage}
           onNextPage={handleNextOrderPage}
         />
 
         <AdminProductsSection
-          products={products}
+          products={filteredProducts}
           query={productQuery}
           pagination={productPagination}
           isLoadingProducts={isLoadingProducts}
           sortBy={sortBy}
           sortDirection={sortDirection}
+          stockFilter={productStockFilter}
           selectedProductIds={selectedProductIds}
           newProduct={newProduct}
           newProductImageKey={newProductImageKey}
@@ -569,6 +750,7 @@ export function AdminDashboardView() {
           onQueryChange={handleQueryChange}
           onSortChange={handleSortChange}
           onSortDirectionChange={handleSortDirectionChange}
+          onStockFilterChange={setProductStockFilter}
           onCreateProduct={() => void handleCreateProduct()}
           onNewProductChange={setNewProduct}
           onNewImageSelect={(event) =>

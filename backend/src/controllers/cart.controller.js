@@ -2,6 +2,7 @@ const { CartItem, Product } = require("../models");
 const { getOrCreateCart, getFullCartByUserId } = require("../services/cart.service");
 const ApiError = require("../utils/api-error");
 const asyncHandler = require("../utils/async-handler");
+const { PRODUCT_COLORS, DEFAULT_PRODUCT_COLOR } = require("../utils/colors");
 
 const getCart = asyncHandler(async (req, res) => {
   const cart = await getFullCartByUserId(req.user.id);
@@ -9,13 +10,13 @@ const getCart = asyncHandler(async (req, res) => {
 });
 
 const addToCart = asyncHandler(async (req, res) => {
-  const { productId, quantity, color = "Black" } = req.body;
+  const { productId, quantity, color = DEFAULT_PRODUCT_COLOR } = req.body;
 
   if (!productId || !quantity || quantity < 1) {
     throw new ApiError(400, "productId and quantity (>=1) are required");
   }
 
-  if (!["Black", "White"].includes(color)) {
+  if (!PRODUCT_COLORS.includes(color)) {
     throw new ApiError(400, "Invalid color");
   }
 
@@ -42,13 +43,13 @@ const addToCart = asyncHandler(async (req, res) => {
 });
 
 const updateCartItem = asyncHandler(async (req, res) => {
-  const { productId, quantity, color = "Black" } = req.body;
+  const { productId, quantity, color = DEFAULT_PRODUCT_COLOR } = req.body;
 
   if (!productId || !quantity || quantity < 1) {
     throw new ApiError(400, "productId and quantity (>=1) are required");
   }
 
-  if (!["Black", "White"].includes(color)) {
+  if (!PRODUCT_COLORS.includes(color)) {
     throw new ApiError(400, "Invalid color");
   }
 
@@ -66,13 +67,13 @@ const updateCartItem = asyncHandler(async (req, res) => {
 });
 
 const removeCartItem = asyncHandler(async (req, res) => {
-  const { productId, color = "Black" } = req.body;
+  const { productId, color = DEFAULT_PRODUCT_COLOR } = req.body;
 
   if (!productId) {
     throw new ApiError(400, "productId is required");
   }
 
-  if (!["Black", "White"].includes(color)) {
+  if (!PRODUCT_COLORS.includes(color)) {
     throw new ApiError(400, "Invalid color");
   }
 

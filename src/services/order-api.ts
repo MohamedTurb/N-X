@@ -1,13 +1,14 @@
 import { requestJson } from "./api";
 import type { BackendProduct } from "./product-api";
 import { mapProduct } from "./product-api";
+import { DEFAULT_PRODUCT_COLOR, type ProductColor } from "../lib/product-colors";
 
 export type BackendOrderItem = {
   id: number;
   orderId: number;
   productId: number;
   quantity: number;
-  color?: "Black" | "White";
+  color?: ProductColor;
   price: number | string;
   product: BackendProduct;
 };
@@ -30,7 +31,11 @@ export type BackendOrder = {
   buildingNumber?: string | null;
   floorNumber?: string | null;
   landmark?: string | null;
-  status: "pending" | "paid" | "shipped" | "delivered";
+  status: "pending" | "paid" | "shipped" | "delivered" | "canceled" | "refunded";
+  shipmentStatus?: "pending" | "packed" | "shipped" | "delivered";
+  trackingNumber?: string | null;
+  canceledAt?: string | null;
+  refundedAt?: string | null;
   createdAt: string;
   updatedAt: string;
   user?: BackendOrderUser;
@@ -53,7 +58,7 @@ export type OrderItem = {
   productId: number;
   productName: string;
   quantity: number;
-  color: "Black" | "White";
+  color: ProductColor;
   priceValue: number;
   priceLabel: string;
   imageUrl: string;
@@ -75,6 +80,10 @@ export type Order = {
   userName: string;
   userEmail: string;
   status: BackendOrder["status"];
+  shipmentStatus: NonNullable<BackendOrder["shipmentStatus"]>;
+  trackingNumber: string | null;
+  canceledAt: string | null;
+  refundedAt: string | null;
   createdAt: string;
   items: OrderItem[];
 };
@@ -100,8 +109,12 @@ export type AdminDashboardSummary = {
     pendingOrders: number;
     cancellationRate: number;
     lowStockItems: number;
+    outOfStockItems: number;
+    reorderNeededItems: number;
+    featuredProducts: number;
     totalOrders: number;
     totalProducts: number;
+    inactiveCustomers: number;
   };
   charts: {
     dailySales: Array<{ label: string; total: number }>;
@@ -119,6 +132,15 @@ export type AdminDashboardSummary = {
     }>;
   };
   customers: Array<{
+    id: number;
+    username: string;
+    email: string;
+    orderCount: number;
+    totalSpent: number;
+    totalSpentLabel: string;
+    lastActivityAt: string;
+  }>;
+  topCustomers: Array<{
     id: number;
     username: string;
     email: string;
@@ -155,6 +177,10 @@ function normalizeOrder(order: BackendOrder): Order {
     userName: order.user?.username ?? "",
     userEmail: order.user?.email ?? "",
     status: order.status,
+    shipmentStatus: order.shipmentStatus ?? "pending",
+    trackingNumber: order.trackingNumber ?? null,
+    canceledAt: order.canceledAt ?? null,
+    refundedAt: order.refundedAt ?? null,
     createdAt: order.createdAt,
     items: (order.items ?? []).map((item) => {
       const priceValue = typeof item.price === "number" ? item.price : Number.parseFloat(item.price);
@@ -164,7 +190,7 @@ function normalizeOrder(order: BackendOrder): Order {
         productId: item.productId,
         productName: mapProduct(item.product).name,
         quantity: item.quantity,
-        color: item.color ?? "Black",
+        color: item.color ?? DEFAULT_PRODUCT_COLOR,
         priceValue,
         priceLabel: formatCurrency(priceValue),
         imageUrl: mapProduct(item.product).imageUrl,
@@ -212,4 +238,9 @@ export const orderApi = {
   getDashboardSummary: async (token: string) => requestJson<AdminDashboardSummary>("/orders/summary", { token }),
   updateOrderStatus: async (token: string, id: number, status: BackendOrder["status"]) =>
     normalizeOrder(await requestJson<BackendOrder>(`/orders/${id}/status`, { method: "PUT", token, body: { status } })),
+  updateOrderShipping: async (
+    token: string,
+    id: number,
+    payload: { trackingNumber?: string | null; shipmentStatus?: NonNullable<BackendOrder["shipmentStatus"]> }
+  ) => normalizeOrder(await requestJson<BackendOrder>(`/orders/${id}/shipping`, { method: "PUT", token, body: payload })),
 };

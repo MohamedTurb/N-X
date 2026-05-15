@@ -1,5 +1,6 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
+const { PRODUCT_COLORS, DEFAULT_PRODUCT_COLOR } = require("../utils/colors");
 
 const OrderItem = sequelize.define(
   "OrderItem",
@@ -23,9 +24,9 @@ const OrderItem = sequelize.define(
       validate: { min: 1 },
     },
     color: {
-      type: DataTypes.ENUM("Black", "White"),
+      type: DataTypes.ENUM(...PRODUCT_COLORS),
       allowNull: false,
-      defaultValue: "Black",
+      defaultValue: DEFAULT_PRODUCT_COLOR,
     },
     price: {
       type: DataTypes.DECIMAL(10, 2),

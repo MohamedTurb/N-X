@@ -10,6 +10,8 @@ export type BackendProduct = {
   imageUrl: string;
   imagePublicId?: string | null;
   imageVariants?: Array<{ width: number; url: string }>;
+  variants?: Array<{ sku: string; color: string; size: string; stock: number }>;
+  featured?: boolean;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -27,6 +29,8 @@ export type Product = {
   imageUrl: string;
   imagePublicId?: string | null;
   imageVariants?: Array<{ width: number; url: string }>;
+  variants?: Array<{ sku: string; color: string; size: string; stock: number }>;
+  featured?: boolean;
 };
 
 let productCache: Product[] | null = null;
@@ -94,6 +98,8 @@ export function mapProduct(product: BackendProduct): Product {
     imageUrl: product.imageUrl,
     imagePublicId: product.imagePublicId,
     imageVariants: product.imageVariants,
+    variants: product.variants,
+    featured: product.featured ?? false,
   };
 }
 

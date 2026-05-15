@@ -4,7 +4,8 @@ const { createOrderFromCart } = require("../services/order.service");
 const ApiError = require("../utils/api-error");
 const asyncHandler = require("../utils/async-handler");
 
-const ORDER_STATUSES = ["pending", "paid", "shipped", "delivered"];
+const ORDER_STATUSES = ["pending", "paid", "shipped", "delivered", "canceled", "refunded"];
+const SHIPMENT_STATUSES = ["pending", "packed", "shipped", "delivered"];
 
 const orderInclude = [
   {
@@ -40,7 +41,11 @@ const buildDashboardSummary = (orders, products, users) => {
   const ordersToday = orders.filter((order) => new Date(order.createdAt) >= startOfToday).length;
   const ordersThisWeek = orders.filter((order) => new Date(order.createdAt) >= startOfWeek).length;
   const pendingOrders = orders.filter((order) => order.status === "pending").length;
-  const cancellationRate = 0;
+  const canceledOrders = orders.filter((order) => order.status === "canceled").length;
+  const cancellationRate = orders.length > 0 ? canceledOrders / orders.length : 0;
+  const outOfStockProducts = products.filter((product) => product.stock <= 0).length;
+  const reorderNeededProducts = products.filter((product) => product.stock > 0 && product.stock <= 5).length;
+  const featuredProducts = products.filter((product) => product.featured).length;
 
   const statusCounts = ORDER_STATUSES.map((status) => ({
     status,
@@ -130,6 +135,11 @@ const buildDashboardSummary = (orders, products, users) => {
     .sort((a, b) => b.lastActivityAt.localeCompare(a.lastActivityAt))
     .slice(0, 10);
 
+  const topCustomers = [...customerStats].sort((a, b) => b.totalSpent - a.totalSpent).slice(0, 5);
+  const inactiveThreshold = new Date(now);
+  inactiveThreshold.setDate(inactiveThreshold.getDate() - 30);
+  const inactiveCustomers = customerStats.filter((customer) => new Date(customer.lastActivityAt) < inactiveThreshold).length;
+
   return {
     overview: {
       revenue: Number(revenue.toFixed(2)),
@@ -140,9 +150,13 @@ const buildDashboardSummary = (orders, products, users) => {
       ordersThisWeek,
       pendingOrders,
       cancellationRate,
-      lowStockItems: products.filter((product) => product.stock <= 5).length,
+      lowStockItems: reorderNeededProducts,
+      outOfStockItems: outOfStockProducts,
+      reorderNeededItems: reorderNeededProducts,
+      featuredProducts,
       totalOrders: orders.length,
       totalProducts: products.length,
+      inactiveCustomers,
     },
     charts: {
       dailySales: Array.from(dailySalesMap.values()),
@@ -151,6 +165,7 @@ const buildDashboardSummary = (orders, products, users) => {
       topProducts,
     },
     customers: customerStats,
+    topCustomers,
   };
 };
 
@@ -272,7 +287,7 @@ const getDashboardSummary = asyncHandler(async (_req, res) => {
 const updateOrderStatus = asyncHandler(async (req, res) => {
   const { status } = req.body;
 
-  if (!["pending", "paid", "shipped", "delivered"].includes(status)) {
+  if (!ORDER_STATUSES.includes(status)) {
     throw new ApiError(400, "Invalid status");
   }
 
@@ -281,7 +296,42 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Order not found");
   }
 
-  await order.update({ status });
+  const updates = { status };
+
+  if (status === "canceled") {
+    updates.canceledAt = new Date();
+  } else if (status === "refunded") {
+    updates.refundedAt = new Date();
+  }
+
+  await order.update(updates);
+  return res.status(200).json(order);
+});
+
+const updateOrderShipping = asyncHandler(async (req, res) => {
+  const trackingNumber = typeof req.body.trackingNumber === "string" ? req.body.trackingNumber.trim() : "";
+  const shipmentStatus = typeof req.body.shipmentStatus === "string" ? req.body.shipmentStatus.trim() : "";
+
+  if (shipmentStatus && !SHIPMENT_STATUSES.includes(shipmentStatus)) {
+    throw new ApiError(400, "Invalid shipmentStatus");
+  }
+
+  const order = await Order.findByPk(req.params.id);
+  if (!order) {
+    throw new ApiError(404, "Order not found");
+  }
+
+  const updates = {};
+
+  if (req.body.trackingNumber !== undefined) {
+    updates.trackingNumber = trackingNumber || null;
+  }
+
+  if (req.body.shipmentStatus !== undefined) {
+    updates.shipmentStatus = shipmentStatus || "pending";
+  }
+
+  await order.update(updates);
   return res.status(200).json(order);
 });
 
@@ -291,4 +341,5 @@ module.exports = {
   getAllOrders,
   getDashboardSummary,
   updateOrderStatus,
+  updateOrderShipping,
 };

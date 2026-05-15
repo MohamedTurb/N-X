@@ -2,9 +2,9 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-zinc-800 px-6 py-10">
       <div className="mx-auto flex max-w-7xl flex-col gap-3 text-center text-sm uppercase tracking-[0.14em] text-zinc-400 sm:flex-row sm:items-center sm:justify-between sm:text-left sm:tracking-[0.2em]">
-        <p className="break-all sm:break-normal">contact@nox-void.com</p>
+        <p className="break-all sm:break-normal">contact:noxstreetwear.eg@gmail.com</p>
         <a
-          href="https://www.instagram.com/nox__eg?igsh=eHByeGN2OGkzc28x"
+          href="https://www.instagram.com/nox___eg?igsh=bGowc3pnMnM3eTR2"
           target="_blank"
           rel="noreferrer"
           aria-label="Instagram"

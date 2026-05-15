@@ -3,19 +3,20 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { Product } from "../services/product-api";
-import type { ProductColor, ProductSize } from "./cart-provider";
+import type { ProductSize } from "./cart-provider";
 import { useCart } from "./cart-provider";
 import { useAuth } from "./auth-provider";
 import { ApiError, getErrorMessage } from "../services/api";
 import { useToast } from "./toast-provider";
 import { getProductSizing } from "../lib/product-sizing";
+import { PRODUCT_COLORS, DEFAULT_PRODUCT_COLOR, type ProductColor } from "../lib/product-colors";
 
 export function ProductActions({ product }: { product: Product }) {
   const router = useRouter();
   const { addItem } = useCart();
   const { isAuthenticated } = useAuth();
   const { showToast } = useToast();
-  const [color, setColor] = useState<ProductColor>("Black");
+  const [color, setColor] = useState<ProductColor>(DEFAULT_PRODUCT_COLOR);
   const sizing = getProductSizing(product.categoryKey);
   const [size, setSize] = useState<ProductSize>(sizing.defaultSize);
   const [isBusy, setIsBusy] = useState(false);
@@ -68,7 +69,7 @@ export function ProductActions({ product }: { product: Product }) {
       <div>
         <p className="font-body text-[10px] uppercase tracking-[0.16em] text-zinc-400 sm:text-xs sm:tracking-[0.25em]">Color In Description</p>
         <div className="mt-3 flex items-center gap-3">
-          {(["Black", "White"] as ProductColor[]).map((tone) => (
+          {PRODUCT_COLORS.map((tone) => (
             <button
               key={tone}
               onClick={() => setColor(tone)}

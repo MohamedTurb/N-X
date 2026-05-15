@@ -50,6 +50,10 @@ const createOrderFromCart = async (userId, orderMeta = {}) => {
         floorNumber: orderMeta.floorNumber?.trim() || null,
         landmark: orderMeta.landmark?.trim() || null,
         status: "pending",
+        shipmentStatus: "pending",
+        trackingNumber: null,
+        canceledAt: null,
+        refundedAt: null,
       },
       { transaction }
     );

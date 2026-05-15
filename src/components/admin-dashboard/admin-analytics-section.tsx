@@ -73,6 +73,11 @@ export function AdminAnalyticsSection({ summary, isLoading }: Props) {
           <p className="mt-3 font-display text-3xl tracking-[0.06em]">{overview.lowStockItems} / {overview.pendingOrders}</p>
           <p className="mt-2 text-[10px] uppercase tracking-[0.18em] text-zinc-500">Attention needed</p>
         </div>
+        <div className="border border-zinc-800 bg-night p-5">
+          <p className="text-[10px] uppercase tracking-[0.22em] text-zinc-500">Stock Alerts</p>
+          <p className="mt-3 font-display text-3xl tracking-[0.06em]">{overview.outOfStockItems} / {overview.reorderNeededItems}</p>
+          <p className="mt-2 text-[10px] uppercase tracking-[0.18em] text-zinc-500">Out / Reorder</p>
+        </div>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
@@ -116,6 +121,9 @@ export function AdminAnalyticsSection({ summary, isLoading }: Props) {
           </div>
           <div className="mt-6 border-t border-zinc-900 pt-4 text-[10px] uppercase tracking-[0.18em] text-zinc-500">
             Cancellation rate: {formatRatio(summary.overview.cancellationRate)}
+          </div>
+          <div className="mt-3 text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+            Featured products: {summary.overview.featuredProducts} | Inactive customers: {summary.overview.inactiveCustomers}
           </div>
         </div>
       </div>

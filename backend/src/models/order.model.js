@@ -52,9 +52,26 @@ const Order = sequelize.define(
       allowNull: true,
     },
     status: {
-      type: DataTypes.ENUM("pending", "paid", "shipped", "delivered"),
+      type: DataTypes.ENUM("pending", "paid", "shipped", "delivered", "canceled", "refunded"),
       allowNull: false,
       defaultValue: "pending",
+    },
+    shipmentStatus: {
+      type: DataTypes.ENUM("pending", "packed", "shipped", "delivered"),
+      allowNull: false,
+      defaultValue: "pending",
+    },
+    trackingNumber: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    canceledAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    refundedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
     },
   },
   {
