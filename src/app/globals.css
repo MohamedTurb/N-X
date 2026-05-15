@@ -8,6 +8,8 @@
 
 html,
 body {
+  /* Reduce the root font-size slightly to tighten overall spacing/sizing */
+  font-size: 15px;
   background: #000;
   color: #fff;
   scroll-behavior: smooth;
@@ -16,6 +18,32 @@ body {
 
 body {
   min-height: 100vh;
+}
+
+/* Tighter default heading sizes and margins to improve overall balance */
+h1,
+h2,
+h3,
+h4 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  line-height: 1.05;
+}
+
+h1 {
+  font-size: clamp(1.6rem, 2.8vw, 2.5rem);
+}
+
+h2 {
+  font-size: clamp(1.35rem, 2.2vw, 1.75rem);
+}
+
+h3 {
+  font-size: clamp(1.1rem, 1.8vw, 1.25rem);
+}
+
+h4 {
+  font-size: clamp(1rem, 1.6vw, 1rem);
 }
 
 .font-display {
