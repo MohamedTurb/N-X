@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ChangeEvent } from "react";
 import type { Product } from "../../services/product-api";
 
@@ -114,8 +115,16 @@ export function AdminProductsSection({
   return (
     <aside>
       <div className="flex items-end justify-between gap-4">
-        <h2 className="font-display text-3xl tracking-[0.06em] sm:text-4xl">Catalog</h2>
-        <span className="text-[10px] uppercase tracking-[0.22em] text-zinc-500 sm:text-xs">GET /products</span>
+        <div>
+          <h2 className="font-display text-3xl tracking-[0.06em] sm:text-4xl">Catalog</h2>
+          <span className="text-[10px] uppercase tracking-[0.22em] text-zinc-500 sm:text-xs">GET /products</span>
+        </div>
+        <Link
+          href="/orders/all/products/new"
+          className="border border-accent px-4 py-2 text-[10px] uppercase tracking-[0.18em] text-accent transition hover:bg-accent hover:text-white"
+        >
+          Add Product
+        </Link>
       </div>
 
       <div className="mt-5 border border-zinc-800 bg-night p-4">
