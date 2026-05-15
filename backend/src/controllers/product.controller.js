@@ -4,7 +4,7 @@ const ApiError = require("../utils/api-error");
 const asyncHandler = require("../utils/async-handler");
 const { buildResponsiveVariants, destroyImage, uploadBuffer } = require("../services/cloudinary.service");
 
-const allowedUpdateFields = ["name", "description", "price", "stock", "category", "featured"];
+const allowedUpdateFields = ["name", "description", "price", "stock", "category"];
 
 const readJsonValue = (value, fallback = []) => {
   if (value === undefined || value === null || value === "") {
@@ -101,7 +101,7 @@ const getProductById = asyncHandler(async (req, res) => {
 });
 
 const createProduct = asyncHandler(async (req, res) => {
-  const { name, description, price, stock, category, imageUrl, imagePublicId, imageVariants, featured } = req.body;
+  const { name, description, price, stock, category, imageUrl, imagePublicId, imageVariants } = req.body;
 
   if (!name || !description || price === undefined || stock === undefined || !category || (!imageUrl && !req.file)) {
     throw new ApiError(400, "All product fields are required");
@@ -120,7 +120,6 @@ const createProduct = asyncHandler(async (req, res) => {
     price,
     stock,
     category,
-    featured: featured === true || featured === "true" || featured === 1 || featured === "1",
     ...nextImage,
   });
 
@@ -165,9 +164,7 @@ const updateProduct = asyncHandler(async (req, res) => {
     }
   }
 
-  if (req.body.featured !== undefined) {
-    updates.featured = req.body.featured === true || req.body.featured === "true" || req.body.featured === 1 || req.body.featured === "1";
-  }
+  // `featured` column may not exist in production DB; ignore updates to it.
 
   // `variants` column removed from schema — ignore incoming variants payload
 

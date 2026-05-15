@@ -45,11 +45,6 @@ const Product = sequelize.define(
       defaultValue: [],
     },
     // `variants` removed to avoid selecting a non-existent DB column during queries.
-    featured: {
-      type: DataTypes.BOOLEAN,
-      allowNull: false,
-      defaultValue: false,
-    },
   },
   {
     tableName: "products",
