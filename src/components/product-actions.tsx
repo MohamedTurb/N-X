@@ -9,7 +9,7 @@ import { useAuth } from "./auth-provider";
 import { ApiError, getErrorMessage } from "../services/api";
 import { useToast } from "./toast-provider";
 import { getProductSizing } from "../lib/product-sizing";
-import { PRODUCT_COLORS, DEFAULT_PRODUCT_COLOR, type ProductColor } from "../lib/product-colors";
+import { PRODUCT_COLORS, DEFAULT_PRODUCT_COLOR, PRODUCT_COLOR_SWATCHES, type ProductColor } from "../lib/product-colors";
 
 export function ProductActions({ product }: { product: Product }) {
   const router = useRouter();
@@ -68,18 +68,21 @@ export function ProductActions({ product }: { product: Product }) {
     <div className="mt-8 space-y-5">
       <div>
         <p className="font-body text-[10px] uppercase tracking-[0.16em] text-zinc-400 sm:text-xs sm:tracking-[0.25em]">Color In Description</p>
-        <div className="mt-3 flex items-center gap-3">
+        <div className="mt-3 flex flex-wrap items-center gap-3">
           {PRODUCT_COLORS.map((tone) => (
             <button
               key={tone}
               onClick={() => setColor(tone)}
-              className={`border px-4 py-2 text-[10px] uppercase tracking-[0.14em] transition sm:text-xs sm:tracking-[0.2em] ${
+              aria-label={tone}
+              title={tone}
+              className={`h-10 w-10 rounded-full border transition sm:h-11 sm:w-11 ${
                 color === tone
-                  ? "border-white bg-white text-black"
-                  : "border-zinc-600 text-zinc-300 hover:border-white hover:text-white"
+                  ? "scale-105 border-white shadow-[0_0_0_2px_rgba(255,255,255,0.25)]"
+                  : "border-zinc-600 hover:scale-105 hover:border-white"
               }`}
+              style={{ backgroundColor: PRODUCT_COLOR_SWATCHES[tone] }}
             >
-              {tone}
+              <span className="sr-only">{tone}</span>
             </button>
           ))}
         </div>
