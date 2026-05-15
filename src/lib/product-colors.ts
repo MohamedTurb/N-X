@@ -1,6 +1,7 @@
 export const PRODUCT_COLORS = [
   "White",
   "Black",
+  "Rose",
   "Olive Green",
   "Beige",
   "Burgundy",
