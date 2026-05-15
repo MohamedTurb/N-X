@@ -44,11 +44,7 @@ const Product = sequelize.define(
       allowNull: false,
       defaultValue: [],
     },
-    variants: {
-      type: DataTypes.JSONB,
-      allowNull: false,
-      defaultValue: [],
-    },
+    // `variants` removed to avoid selecting a non-existent DB column during queries.
     featured: {
       type: DataTypes.BOOLEAN,
       allowNull: false,

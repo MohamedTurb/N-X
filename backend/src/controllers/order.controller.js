@@ -299,9 +299,9 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
   const updates = { status };
 
   if (status === "canceled") {
-    updates.canceledAt = new Date();
+    // _Note_: not setting `canceledAt` because the production DB may not have this column.
   } else if (status === "refunded") {
-    updates.refundedAt = new Date();
+    // _Note_: not setting `refundedAt` because the production DB may not have this column.
   }
 
   await order.update(updates);
@@ -327,9 +327,8 @@ const updateOrderShipping = asyncHandler(async (req, res) => {
     updates.trackingNumber = trackingNumber || null;
   }
 
-  if (req.body.shipmentStatus !== undefined) {
-    updates.shipmentStatus = shipmentStatus || "pending";
-  }
+  // Do not update `shipmentStatus` here because the production DB may not
+  // contain the corresponding column/type. Only tracking number is updated.
 
   await order.update(updates);
   return res.status(200).json(order);

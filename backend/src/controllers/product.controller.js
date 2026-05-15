@@ -4,7 +4,7 @@ const ApiError = require("../utils/api-error");
 const asyncHandler = require("../utils/async-handler");
 const { buildResponsiveVariants, destroyImage, uploadBuffer } = require("../services/cloudinary.service");
 
-const allowedUpdateFields = ["name", "description", "price", "stock", "category", "featured", "variants"];
+const allowedUpdateFields = ["name", "description", "price", "stock", "category", "featured"];
 
 const readJsonValue = (value, fallback = []) => {
   if (value === undefined || value === null || value === "") {
@@ -101,7 +101,7 @@ const getProductById = asyncHandler(async (req, res) => {
 });
 
 const createProduct = asyncHandler(async (req, res) => {
-  const { name, description, price, stock, category, imageUrl, imagePublicId, imageVariants, variants, featured } = req.body;
+  const { name, description, price, stock, category, imageUrl, imagePublicId, imageVariants, featured } = req.body;
 
   if (!name || !description || price === undefined || stock === undefined || !category || (!imageUrl && !req.file)) {
     throw new ApiError(400, "All product fields are required");
@@ -120,7 +120,6 @@ const createProduct = asyncHandler(async (req, res) => {
     price,
     stock,
     category,
-    variants: readJsonValue(variants),
     featured: featured === true || featured === "true" || featured === 1 || featured === "1",
     ...nextImage,
   });
@@ -170,9 +169,7 @@ const updateProduct = asyncHandler(async (req, res) => {
     updates.featured = req.body.featured === true || req.body.featured === "true" || req.body.featured === 1 || req.body.featured === "1";
   }
 
-  if (req.body.variants !== undefined) {
-    updates.variants = readJsonValue(req.body.variants, product.variants || []);
-  }
+  // `variants` column removed from schema — ignore incoming variants payload
 
   await product.update(updates);
   return res.status(200).json(product);

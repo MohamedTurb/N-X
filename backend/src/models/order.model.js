@@ -56,23 +56,8 @@ const Order = sequelize.define(
       allowNull: false,
       defaultValue: "pending",
     },
-    shipmentStatus: {
-      type: DataTypes.ENUM("pending", "packed", "shipped", "delivered"),
-      allowNull: false,
-      defaultValue: "pending",
-    },
-    trackingNumber: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
-    canceledAt: {
-      type: DataTypes.DATE,
-      allowNull: true,
-    },
-    refundedAt: {
-      type: DataTypes.DATE,
-      allowNull: true,
-    },
+    // shipmentStatus, trackingNumber, canceledAt, refundedAt removed temporarily
+    // to avoid runtime errors when the production DB schema does not include them.
   },
   {
     tableName: "orders",
