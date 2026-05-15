@@ -78,6 +78,7 @@ export function AdminProductsSection({
   onQueryChange,
   onSortChange,
   onSortDirectionChange,
+  stockFilter,
   onStockFilterChange,
   onCreateProduct,
   onNewProductChange,
