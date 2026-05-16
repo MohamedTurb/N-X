@@ -102,7 +102,11 @@ function toToastMessage(error: unknown) {
   return getErrorMessage(error);
 }
 
-export function AdminDashboardView() {
+type Props = {
+  focusSection?: "all" | "products";
+};
+
+export function AdminDashboardView({ focusSection = "all" }: Props) {
   const { token, logout, user } = useAuth();
   const { showToast } = useToast();
 
@@ -243,12 +247,20 @@ export function AdminDashboardView() {
   }, [debouncedProductQuery, logout, productPagination.limit, productPagination.page, showToast, sortBy, sortDirection, token]);
 
   useEffect(() => {
+    if (focusSection === "products") {
+      return;
+    }
+
     void refreshSummary();
-  }, [refreshSummary]);
+  }, [focusSection, refreshSummary]);
 
   useEffect(() => {
+    if (focusSection === "products") {
+      return;
+    }
+
     void refreshOrders();
-  }, [refreshOrders]);
+  }, [focusSection, refreshOrders]);
 
   useEffect(() => {
     void refreshProducts();
@@ -322,6 +334,10 @@ export function AdminDashboardView() {
   };
 
   const handleOrderStatusSave = async (orderId: number) => {
+    if (focusSection === "products") {
+      return;
+    }
+
     if (!token) {
       return;
     }
@@ -361,6 +377,10 @@ export function AdminDashboardView() {
   };
 
   const handleOrderShippingSave = async (orderId: number) => {
+    if (focusSection === "products") {
+      return;
+    }
+
     if (!token) {
       return;
     }
@@ -699,35 +719,45 @@ export function AdminDashboardView() {
         </div>
       ) : null}
 
-      <AdminAnalyticsSection summary={summary} isLoading={summaryLoading} />
-      <AdminCustomersSection
-        customers={summary?.customers ?? []}
-        topCustomers={summary?.topCustomers ?? []}
-        inactiveCustomers={statsSummary?.inactiveCustomers ?? 0}
-        isLoading={summaryLoading}
-      />
-
-      <div className="mt-12 grid gap-8 md:grid-cols-[1fr_350px] xl:grid-cols-[1.35fr_0.9fr] md:gap-10">
-        <AdminOrdersSection
-          orders={orders}
-          orderFilter={orderFilter}
-          orderStatusDrafts={orderStatusDrafts}
-          orderShippingDrafts={orderShippingDrafts}
-          updatingOrderId={updatingOrderId}
-          updatingShippingOrderId={updatingShippingOrderId}
-          filteredOrderCount={orders.length}
-          isLoading={isLoadingOrders}
-          pagination={orderPagination}
-          search={orderSearch}
-          onFilterChange={handleOrderFilterChange}
-          onSearchChange={handleOrderSearchChange}
-          onStatusDraftChange={handleOrderStatusDraft}
-          onStatusSave={(orderId) => void handleOrderStatusSave(orderId)}
-          onShippingDraftChange={handleOrderShippingDraft}
-          onShippingSave={(orderId) => void handleOrderShippingSave(orderId)}
-          onPreviousPage={handlePreviousOrderPage}
-          onNextPage={handleNextOrderPage}
+      {focusSection === "all" ? <AdminAnalyticsSection summary={summary} isLoading={summaryLoading} /> : null}
+      {focusSection === "all" ? (
+        <AdminCustomersSection
+          customers={summary?.customers ?? []}
+          topCustomers={summary?.topCustomers ?? []}
+          inactiveCustomers={statsSummary?.inactiveCustomers ?? 0}
+          isLoading={summaryLoading}
         />
+      ) : null}
+
+      <div
+        className={
+          focusSection === "all"
+            ? "mt-12 grid gap-8 md:grid-cols-[1fr_350px] xl:grid-cols-[1.35fr_0.9fr] md:gap-10"
+            : "mt-12"
+        }
+      >
+        {focusSection === "all" ? (
+          <AdminOrdersSection
+            orders={orders}
+            orderFilter={orderFilter}
+            orderStatusDrafts={orderStatusDrafts}
+            orderShippingDrafts={orderShippingDrafts}
+            updatingOrderId={updatingOrderId}
+            updatingShippingOrderId={updatingShippingOrderId}
+            filteredOrderCount={orders.length}
+            isLoading={isLoadingOrders}
+            pagination={orderPagination}
+            search={orderSearch}
+            onFilterChange={handleOrderFilterChange}
+            onSearchChange={handleOrderSearchChange}
+            onStatusDraftChange={handleOrderStatusDraft}
+            onStatusSave={(orderId) => void handleOrderStatusSave(orderId)}
+            onShippingDraftChange={handleOrderShippingDraft}
+            onShippingSave={(orderId) => void handleOrderShippingSave(orderId)}
+            onPreviousPage={handlePreviousOrderPage}
+            onNextPage={handleNextOrderPage}
+          />
+        ) : null}
 
         <AdminProductsSection
           products={filteredProducts}

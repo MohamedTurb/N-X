@@ -13,6 +13,7 @@ const links = [
   { href: "/cart", label: "Cart" },
   { href: "/orders", label: "Orders" },
   { href: "/orders/all", label: "Admin" },
+  { href: "/orders/all/products", label: "Products" },
 ];
 
 export function SiteNav() {
@@ -34,10 +35,15 @@ export function SiteNav() {
         <div className="w-full sm:w-auto">
           <div className="flex flex-wrap items-center gap-1.5 sm:justify-end sm:gap-3">
           {links.map((link) => {
-            const isActive = pathname === link.href;
+            const isActive =
+              link.href === "/orders/all"
+                ? pathname === "/orders/all"
+                : link.href === "/orders"
+                  ? pathname === "/orders"
+                : pathname === link.href || pathname.startsWith(`${link.href}/`);
             const isCartLink = link.href === "/cart";
             const isOrdersLink = link.href === "/orders";
-            const isAdminLink = link.href === "/orders/all";
+            const isAdminLink = link.href === "/orders/all" || link.href === "/orders/all/products";
 
             if (isOrdersLink && !isAuthenticated) {
               return null;
