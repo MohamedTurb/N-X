@@ -32,12 +32,18 @@ function assertEnv() {
         url.hostname !== "::1" &&
         !url.hostname.includes(".");
       if (invalidHost) {
-        throw new Error("Invalid hostname");
+        throw new Error(
+          `Invalid host in DATABASE_URL. Hostname must be a resolvable domain, not a short identifier: ${url.hostname}`
+        );
       }
     } catch (error) {
-      throw new Error(
-        "DATABASE_URL is invalid. Provide a full Postgres connection URL like postgres://user:pass@host:port/dbname, and make sure the hostname is a resolvable domain."
-      );
+      let message =
+        "DATABASE_URL is invalid. Provide a full Postgres connection URL like postgres://user:pass@host:port/dbname.";
+      if (error && error.message && error.message.startsWith("Invalid host")) {
+        message =
+          "DATABASE_URL host is invalid. Use a full resolvable hostname, not a short identifier like dpg-d812mfhj2pic73bgfmng-a.";
+      }
+      throw new Error(message);
     }
   } else {
     const host = process.env.DB_HOST;

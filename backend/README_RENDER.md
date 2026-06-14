@@ -40,8 +40,8 @@ Install dependencies and run locally (requires DB access):
 ```bash
 cd backend
 npm install
-# set environment variables (or use .env)
-npm run start:dev
+# create .env from .env.example and set DB + JWT values
+npm run dev
 ```
 
 ## Notes

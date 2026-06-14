@@ -9,6 +9,14 @@ const { seedDatabase } = require("./seeders/seed");
 const startServer = async () => {
   try {
     assertEnv();
+
+    const usingDatabaseUrl = Boolean(process.env.DATABASE_URL);
+    console.log(`Database config: using DATABASE_URL=${usingDatabaseUrl}`);
+    if (!usingDatabaseUrl) {
+      console.log(`Database host: ${process.env.DB_HOST}`);
+      console.log(`Database name: ${process.env.DB_NAME}`);
+    }
+
     const syncOnStart = process.env.DB_SYNC_ON_START !== "false";
     const syncForce = process.env.DB_SYNC_FORCE === "true";
 
