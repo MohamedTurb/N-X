@@ -26,9 +26,17 @@ function assertEnv() {
       if (!["postgres:", "postgresql:"].includes(url.protocol)) {
         throw new Error("Unsupported protocol");
       }
+      const invalidHost =
+        url.hostname !== "localhost" &&
+        url.hostname !== "127.0.0.1" &&
+        url.hostname !== "::1" &&
+        !url.hostname.includes(".");
+      if (invalidHost) {
+        throw new Error("Invalid hostname");
+      }
     } catch (error) {
       throw new Error(
-        "DATABASE_URL is invalid. Provide a full Postgres connection URL like postgres://user:pass@host:port/dbname."
+        "DATABASE_URL is invalid. Provide a full Postgres connection URL like postgres://user:pass@host:port/dbname, and make sure the hostname is a resolvable domain."
       );
     }
   } else {
