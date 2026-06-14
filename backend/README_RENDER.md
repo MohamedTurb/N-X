@@ -46,5 +46,7 @@ npm run start:dev
 
 ## Notes
 - The server retries DB authentication on startup by default; tune `DB_CONN_RETRIES` / `DB_CONN_RETRY_DELAY_MS` as needed.
-- Prefer `DATABASE_URL` for managed Postgres (Supabase/Render DB). If using individual `DB_*` vars, ensure `DB_HOST` is reachable from Render.
+- Prefer `DATABASE_URL` for managed Postgres (Supabase/Render DB).
+- If using individual `DB_*` vars, ensure `DB_HOST` is a full hostname reachable from Render. Do not use the short database identifier alone.
+  - Example: `DB_HOST=dpg-d812mfhj2pic73bgfmng-a.rdocxuxrqx01b4pnkr4b.postgres.render.com`
 - The first seeded admin login is `admin@nox.com` / `Admin@123`.

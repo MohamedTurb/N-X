@@ -12,6 +12,41 @@ function assertEnv() {
       `Missing required environment variables: ${missing.join(", ")}`
     );
   }
+
+  if (process.env.DATABASE_URL) {
+    try {
+      const url = new URL(process.env.DATABASE_URL);
+      if (!url.hostname) {
+        throw new Error();
+      }
+      const invalidHost =
+        url.hostname !== "localhost" &&
+        url.hostname !== "127.0.0.1" &&
+        url.hostname !== "::1" &&
+        !url.hostname.includes(".");
+      if (invalidHost) {
+        throw new Error();
+      }
+    } catch (error) {
+      throw new Error(
+        "DATABASE_URL is invalid. Provide a full Postgres connection URL like postgres://user:pass@host:port/dbname."
+      );
+    }
+  } else {
+    const host = process.env.DB_HOST;
+    const invalidHost =
+      host &&
+      host !== "localhost" &&
+      host !== "127.0.0.1" &&
+      host !== "::1" &&
+      !host.includes(".");
+
+    if (invalidHost) {
+      throw new Error(
+        `DB_HOST appears invalid. Provide a full DNS hostname or accessible address, for example: dpg-d812mfhj2pic73bgfmng-a.<region>.render.com. Received: ${host}`
+      );
+    }
+  }
 }
 
 function parseBoolean(value, fallback = false) {
