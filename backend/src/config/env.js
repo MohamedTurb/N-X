@@ -16,16 +16,15 @@ function assertEnv() {
   if (process.env.DATABASE_URL) {
     try {
       const url = new URL(process.env.DATABASE_URL);
+
       if (!url.hostname) {
-        throw new Error();
+        throw new Error("Missing host");
       }
-      const invalidHost =
-        url.hostname !== "localhost" &&
-        url.hostname !== "127.0.0.1" &&
-        url.hostname !== "::1" &&
-        !url.hostname.includes(".");
-      if (invalidHost) {
-        throw new Error();
+      if (!url.pathname || url.pathname === "/") {
+        throw new Error("Missing database name");
+      }
+      if (!["postgres:", "postgresql:"].includes(url.protocol)) {
+        throw new Error("Unsupported protocol");
       }
     } catch (error) {
       throw new Error(
